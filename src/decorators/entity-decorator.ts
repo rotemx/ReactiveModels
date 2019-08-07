@@ -5,7 +5,7 @@ import {Mongo} from "../db/mongo";
 import {IdbConnector} from "../types/interfaces/idb-connector";
 import {EntityBase} from "../abstract/entity-base";
 import {field} from "./field-decorator";
-import {processTasks} from "../utils/processTasks";
+import {processMgmt} from "../utils/process-mgmt";
 import {MONGO_CONFIG} from "../CONFIG";
 
 //endregion
@@ -59,7 +59,7 @@ export class Dog extends EntityBase<Person> {
 
 
 (async () => {
-    processTasks();
+    processMgmt();
     await Entity.init({db_config: {username: MONGO_CONFIG.user, pwd: MONGO_CONFIG.pwd}});
 
 

@@ -15,7 +15,7 @@ function onExit(err) {
     process.exit();
 }
 
-export const processTasks = ()=>{
+export const processMgmt = ()=>{
     const proc: any = process;
     proc.on('uncaughtException', onExit);
     proc.on('exit', onExit);
