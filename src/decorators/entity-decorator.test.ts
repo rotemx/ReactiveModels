@@ -1,13 +1,13 @@
 //region imports
-import {EntityBase} from "../abstract/entity-base";
-import {Entity} from "./entity-decorator";
+import {Entity} from "../entity";
 import {Mongo} from "../db/__mock__/mongo";
 import {field} from "./field-decorator";
 import Mock = jest.Mock;
+import {Model} from "../abstract/model";
 
 //endregion
 
-export class Person extends EntityBase<Person> {
+export class Person extends Model<Person> {
     @field name
     @field age
 }
@@ -23,7 +23,7 @@ describe('Entity decorator', () => {
     beforeEach(() => {
     });
 
-    test.skip('creating an entity', () => {
+    test('creating an entity', () => {
         let person = new Person();
         expect(mongo.upsert).toBeCalledTimes(1)
         expect(person._id).toBeTruthy();

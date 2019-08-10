@@ -2,20 +2,32 @@ import {Db, MongoClient} from 'mongodb';
 import {Log} from "../utils/Log";
 import {logErr} from "../utils/log-err";
 import {IdbConnector} from "../types/interfaces/idb-connector";
-import {IDBOptions} from "../types/interfaces/idb-options";
+import {IDBConfig} from "../types/interfaces/idb-config";
 import {serializeData} from "../utils/serialize-data";
-import {EntityBase} from "../abstract/entity-base";
+import {Model} from "../abstract/model";
+
+const DEFAULT_CONFIG = {
+    hostname     : 'localhost',
+    port         : 27017,
+    url          : '',
+    master_url   : '',
+    username     : '',
+    pwd          : '',
+    db_name      : 'EntityModel',
+    authenticated: true
+};
 
 export class Mongo implements IdbConnector {
     client: MongoClient;
-    db: Db;
-    master_client: MongoClient;
-    master_url: string;
+    private db: Db;
 
-    init({hostname = 'localhost', port = 27017, url, master_url, username = '', pwd = '', db_name = 'EntityModel', authenticated}: IDBOptions): Promise<any> {
-        this.master_url = master_url;
+    private config: IDBConfig;
+
+    init(config: IDBConfig = DEFAULT_CONFIG): Promise<any> {
+        this.config = {...DEFAULT_CONFIG, ...config};
 
         const
+            {url, username, hostname, port, pwd, db_name} = this.config,
             full_url = url || `mongodb://${username}:${pwd}@${hostname}:${port}/?authMechanism=DEFAULT`;
 
         return MongoClient
@@ -31,20 +43,7 @@ export class Mongo implements IdbConnector {
             });
     }
 
-    async getMasterClient(): Promise<MongoClient> {
-        return this.master_client || await MongoClient.connect(this.master_url)
-            .then((client: MongoClient) => {
-                this.master_client = client;
-                Log(`Connected successfully to MASTER mongo DB at ${this.master_url}\n`, 'Mongo/getMasterClient');
-                return client;
-            })
-            .catch(err => {
-                logErr(err);
-                return Promise.reject(err);
-            });
-    }
-
-    upsert<T extends EntityBase<T>>(query: { _id: string, [prop: string]: any }, data: Partial<T>, collection_name: string): Promise<any> {
+    upsert<T extends Model<T>>(query: { _id: string, [prop: string]: any }, data: Partial<T>, collection_name: string): Promise<any> {
         if (!query || !collection_name) return Promise.reject('Mongo/update: no item provided.');
         if (!query._id) {
             throw new Error('_id was not specified in upsert')
@@ -68,14 +67,21 @@ export class Mongo implements IdbConnector {
         this.client && this.client.close();
     }
 
-    async list(collection: string): Promise<any> {
-        if (!collection) return Promise.reject('Mongo/list: no collection name provided.');
-        if (!this.db.collection(collection)) {
-            Log(`db.collection ${collection} is undefined !`, 'WTF');
+    async list(collection_name: string): Promise<any> {
+        if (!collection_name) return Promise.reject('Mongo/list: no collection name provided.');
+        if (!this.db.collection(collection_name)) {
+            Log(`db.collection ${collection_name} is undefined!`, 'WTF');
             return Promise.reject('Mongo/list: no collection name provided.');
         }
         Log(`MongoDB:list`);
-        return this.db.collection(collection)
-            .find({}).toArray();
+        return this
+            .db
+            .collection(collection_name)
+            .find({})
+            .toArray() || [];
+    }
+
+    async delete_db():Promise<any> {
+        return this.db.dropDatabase()
     }
 }

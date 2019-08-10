@@ -1,21 +1,20 @@
-// import 'reflect-metadata'
+//region imports
 import {UserClass} from "../entity";
 import {Model} from "../abstract/model";
 import {Log} from "../utils/log";
+//endregion
 
-export const field = (
+export const hasMany = (
     base: Model<any>,
     key: string
-): void => {
+): any => {
 
     const
         Class = <UserClass>base.constructor,
         type = Reflect.getMetadata("design:type", base, key);
 
-    Log(`Setting key ${key} with type ${type.name}`);
-    Class.fields = Class.fields || [];
-    if (!Class.fields.find(f => f.key === key)) {
-        Class.fields.push({key, type})
-    }
+    Log(`Setting HasOne key ${key} with type ${type.name}`);
+    Class.hasMany = Class.hasMany || [];
+    Class.hasMany.push({key, UserClass: type})
 }
 

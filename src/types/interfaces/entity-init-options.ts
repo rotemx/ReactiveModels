@@ -1,5 +1,7 @@
-import {IDBOptions} from "./idb-options";
+import {IDBConfig} from "./idb-config";
+
 
 export interface IEntityInitOptions {
-    db_config: IDBOptions
+    db_config: IDBConfig
+    load_all? :boolean
 }

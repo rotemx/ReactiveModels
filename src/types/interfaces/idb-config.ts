@@ -1,6 +1,6 @@
 import {IdbConnector} from "./idb-connector";
 
-export interface IDBOptions {
+export interface IDBConfig {
     hostname?: string
     url?: string
     master_url?: string

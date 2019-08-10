@@ -1,9 +1,9 @@
-import {IDBOptions} from "./idb-options";
+import {IDBConfig} from "./idb-config";
 
 
 export interface IdbConnector {
 
-    init({hostname, url, master_url, username, pwd, db_name, authenticated}: IDBOptions): Promise<any>;
+    init({hostname, url, master_url, username, pwd, db_name, authenticated}: IDBConfig): Promise<any>;
 
     upsert(query, data, collection_name: string): Promise<any>;
 
@@ -11,5 +11,7 @@ export interface IdbConnector {
 
     close(): Promise<void>;
 
-    list(collection: string): Promise<any>;
+    list(collection_name: string): Promise<any>;
+
+    delete_db(): Promise<any>;
 }
