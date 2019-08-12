@@ -10,33 +10,38 @@ import {ParentModelConfig} from "../types/interfaces/parent-model-config";
 import {setHasMany} from "./set-has-many";
 import {proxyHandlerFactory} from "../utils/proxy-handler-factory";
 import moment = require("moment");
-
 //endregion
 
 
 export class Model<T> {
 
+	_id:string
     Class: typeof Model;
 
-    async set(data: Partial<T>) {
-        let auto_update = this.auto_update_DB;
+    async set(data: Partial<T>, save_after = true) {
+        const auto_update = this.auto_update_DB;
         this.auto_update_DB = false;
         Object.assign(this, data)
         this.auto_update_DB = auto_update;
-        this.update(data)
+	    if (save_after) {
+		    await this.update(data)
+	    }
     }
-
-    constructor(public _id?: string, public auto_update_DB = true) {
+	
+	constructor(private _data?: Partial<Model<T>>, public auto_update_DB = true) {
         if (!Entity.db) {
             throw new Error('Entity db not initialized')
         }
-
         this.Class = <typeof Model>(this.constructor);
-
-        if (!this._id) {
+		
+        if (_data){
+        	this.set(<T>_data,false)
+        }
+        else{
             this._id = `${this.Class.name}:${moment().utc().format('DD-MM-YY-HH-mm')}:${getShortUuid()}`;
             this.save()
         }
+        
         this.Class.instances = this.Class.instances || [];
         this.Class.instances.push(this)
         setHasMany.call(this);
@@ -70,7 +75,7 @@ export class Model<T> {
                         parent_model[p.key] = null
                     }
                 }
-                await this.Class.all()
+                await this.Class.loadAll()
             })
     };
 
@@ -94,15 +99,13 @@ export class Model<T> {
         return this.instances.filter(inst => _ids.includes(inst._id))
     };
 
-    static async all(): Promise<Model<any>[]> {
+    static async loadAll(): Promise<Model<any>[]> {
         return this.instances = (await Entity.db.list(this.collection_name))
             .map(data => {
                 const
                     Class: Class = Entity.Classes
                         .find(userClass => userClass.collection_name === this.collection_name),
-                    instance = new Class(data._id);
-
-                instance.set(data)
+                    instance = new Class(data);
                 return instance
             })
     }

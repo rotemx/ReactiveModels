@@ -76,14 +76,19 @@ export class Mongo implements IdbConnector {
             Log(`db.collection ${collection_name} is undefined!`, 'WTF');
             return Promise.reject('Mongo/list: no collection name provided.');
         }
-        return (await this
-            .db
-            .collection(collection_name)
-            .find(ids ? {_id: {$in: ids}} : {})
-            .toArray()) || [];
+	    try {
+		    return (await this
+			    .db
+			    .collection(collection_name)
+			    .find(ids ? {_id: {$in: ids}} : {})
+			    .toArray()) || [];
+	    } catch (e) {
+        	console.log(`list: error`)
+		    console.log(e);
+	    }
     }
-
-    async delete_db(): Promise<any> {
+	
+	async delete_db(): Promise<any> {
         return this.db.dropDatabase()
     }
 }

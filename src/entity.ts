@@ -27,8 +27,8 @@ export namespace Entity {
             await Entity.loadAll()
         },
         loadAll: () => Promise<void> = async () => {
-            Entity.Classes.forEach(Class => {
-                Class.all()
+            Entity.Classes.forEach(async Class => {
+                await Class.loadAll()
             })
         },
 

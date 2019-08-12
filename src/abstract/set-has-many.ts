@@ -9,7 +9,7 @@ export function setHasMany(this: Model<any>): void {
         (() => {
 
             let
-                ids: string[],
+	            ref,
                 handler = {
                     get: (target, property) => {
                         return target[property];
@@ -32,7 +32,7 @@ export function setHasMany(this: Model<any>): void {
                         throw new Error(`Value ${json(models)} is not an array of instances of ${Class.name}.`)
                     }
 
-                    ids = models.map(model => model._id);
+                    ref = this[`__${key}__.$hasManyRef`] = models.map(model => model._id);
 
                     models.forEach(child_model => {
                         const parent = {
@@ -46,8 +46,8 @@ export function setHasMany(this: Model<any>): void {
                     proxy = new Proxy(models, handler);
 
                     if (this.auto_update_DB) {
-                        console.log(`Upserting class ${this.Class.name} with hasMany ${key} value ${json(ids)}`);
-                        this.update({[key]: json(ids)})
+                        console.log(`Upserting class ${this.Class.name} with hasMany ${key} value ${json(ref)}`);
+                        this.update({[key]: json(ref)})
                     }
                 }
             })
