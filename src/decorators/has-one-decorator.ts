@@ -1,5 +1,5 @@
 //region imports
-import {UserClass} from "../entity";
+import {Class} from "../types/types/class";
 import {Model} from "../abstract/model";
 import {Log} from "../utils/log";
 //endregion
@@ -7,14 +7,12 @@ import {Log} from "../utils/log";
 export const hasOne = (
     base: Model<any>,
     key: string
-): any => {
-
+): void => {
     const
-        Class = <UserClass>base.constructor,
-        type = Reflect.getMetadata("design:type", base, key);
+        parent_Class = <Class>base.constructor,
+        child_Class = Reflect.getMetadata("design:type", base, key);
 
-    Log(`Setting HasOne key ${key} with type ${type.name}`);
-    Class.hasOnes = Class.hasOnes || [];
-    Class.hasOnes.push({key, UserClass: type})
+    Log(`Setting HasOne key ${key} with type ${child_Class.name}`);
+    parent_Class.hasOnes = parent_Class.hasOnes || [];
+    parent_Class.hasOnes.push({key, Class: child_Class})
 }
-

@@ -1,6 +1,7 @@
+//region imports
 import {decycle} from "json-cyclic"
 import {Model} from "../abstract/model";
-import {field} from "../decorators/field-decorator";
+//endregion
 
 const EXCLUDES = ['save', 'insert', 'delete', 'db', 'auto_update_DB', 'collection_name', 'fields'];
 

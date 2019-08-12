@@ -1,4 +1,5 @@
 import {IDBConfig} from "./idb-config";
+import {Model} from "../../abstract/model";
 
 
 export interface IdbConnector {
@@ -11,7 +12,9 @@ export interface IdbConnector {
 
     close(): Promise<void>;
 
-    list(collection_name: string): Promise<any>;
+    list(collection_name: string, ids?:string[]): Promise<Model<any>[]>;
 
     delete_db(): Promise<any>;
+
+    // get(collection_name: string, _ids: string[]): Promise<Model<any>>
 }

@@ -1,7 +1,8 @@
-// import 'reflect-metadata'
-import {UserClass} from "../entity";
+//region imports
+import {Class} from "../types/types/class";
 import {Model} from "../abstract/model";
 import {Log} from "../utils/log";
+//endregion
 
 export const field = (
     base: Model<any>,
@@ -9,13 +10,13 @@ export const field = (
 ): void => {
 
     const
-        Class = <UserClass>base.constructor,
-        type = Reflect.getMetadata("design:type", base, key);
+        Class = <Class>base.constructor,
+        Type = Reflect.getMetadata("design:type", base, key);
 
-    Log(`Setting key ${key} with type ${type.name}`);
+    Log(`Setting key ${key} with type ${Type.name}`);
     Class.fields = Class.fields || [];
     if (!Class.fields.find(f => f.key === key)) {
-        Class.fields.push({key, type})
+        Class.fields.push({key, type: Type})
     }
 }
 

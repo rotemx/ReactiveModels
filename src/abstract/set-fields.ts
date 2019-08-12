@@ -1,36 +1,20 @@
+//region imports
 import {Model} from "./model";
 import {isPrimitive} from "../utils/serialize-data";
+import {Log} from "../utils/log";
+import {proxyHandlerFactory} from "../utils/proxy-handler-factory";
+//endregion
 
-const PRIMITIVES = [
-    null,
-    undefined,
-    Number,
-    BigInt,
-    String,
-    Symbol
-]
+
 
 export function setFields(this: Model<any>): void {
     for (const {key, type} of this.Class.fields) {
         (() => {
             let
                 mode: 'primitive' | 'object' = 'primitive',
-                primitive_value;
-
-            let
-                handler = {
-                    get: (target, property) => {
-                        return target[property];
-                    },
-                    set: (target, property, value, receiver) => {
-                        console.log('setting ' + property + ' for ' + target + ' with value ' + value);
-                        target[property] = value;
-                        this.update({[key]: target})
-                        // you have to return true to accept the changes
-                        return true;
-                    }
-                },
+                primitive_value,
                 proxy;
+
 
 
             Object.defineProperty((this), key, {
@@ -45,7 +29,7 @@ export function setFields(this: Model<any>): void {
                         mode = "primitive"
                     } else {
                         mode = "object"
-                        proxy = new Proxy(value, handler);
+                        proxy = new Proxy(value, proxyHandlerFactory(key, this.update ));
                     }
 
 

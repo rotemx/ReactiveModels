@@ -1,3 +1,4 @@
+//region imports
 import {Db, MongoClient} from 'mongodb';
 import {Log} from "../utils/Log";
 import {logErr} from "../utils/log-err";
@@ -5,6 +6,7 @@ import {IdbConnector} from "../types/interfaces/idb-connector";
 import {IDBConfig} from "../types/interfaces/idb-config";
 import {serializeData} from "../utils/serialize-data";
 import {Model} from "../abstract/model";
+//endregion
 
 const DEFAULT_CONFIG = {
     hostname     : 'localhost',
@@ -48,10 +50,11 @@ export class Mongo implements IdbConnector {
         if (!query._id) {
             throw new Error('_id was not specified in upsert')
         }
+        const serialized_data = serializeData({...data, _id: query._id});
         return this
             .db
             .collection(collection_name)
-            .updateOne(query, {$set: serializeData<T>(<T>{...data, _id: query._id}),}, {upsert: true});
+            .updateOne(query, {$set: serialized_data,}, {upsert: true});
     }
 
 
@@ -67,21 +70,20 @@ export class Mongo implements IdbConnector {
         this.client && this.client.close();
     }
 
-    async list(collection_name: string): Promise<any> {
+    async list(collection_name: string, ids?: string[]): Promise<Model<any>[]> {
         if (!collection_name) return Promise.reject('Mongo/list: no collection name provided.');
         if (!this.db.collection(collection_name)) {
             Log(`db.collection ${collection_name} is undefined!`, 'WTF');
             return Promise.reject('Mongo/list: no collection name provided.');
         }
-        Log(`MongoDB:list`);
-        return this
+        return (await this
             .db
             .collection(collection_name)
-            .find({})
-            .toArray() || [];
+            .find(ids ? {_id: {$in: ids}} : {})
+            .toArray()) || [];
     }
 
-    async delete_db():Promise<any> {
+    async delete_db(): Promise<any> {
         return this.db.dropDatabase()
     }
 }

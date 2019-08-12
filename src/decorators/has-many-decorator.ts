@@ -1,5 +1,5 @@
 //region imports
-import {UserClass} from "../entity";
+import {Class} from "../types/types/class";
 import {Model} from "../abstract/model";
 import {Log} from "../utils/log";
 //endregion
@@ -10,11 +10,11 @@ export const hasMany = (
 ): any => {
 
     const
-        Class = <UserClass>base.constructor,
+        Class = <Class>base.constructor,
         type = Reflect.getMetadata("design:type", base, key);
 
-    Log(`Setting HasOne key ${key} with type ${type.name}`);
+    Log(`Setting HasMany key ${key} with type ${type.name}`);
     Class.hasMany = Class.hasMany || [];
-    Class.hasMany.push({key, UserClass: type})
+    Class.hasMany.push({key, Class: type})
 }
 
