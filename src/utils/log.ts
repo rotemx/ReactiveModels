@@ -13,7 +13,7 @@ export function Log(msg: any, fn?: string, filePrefix:string = 'MAIN', saveToFil
 		now      = moment().format('DD-MM-YY HH:mm:ss:SSS'),
 		today    = moment().format('DD-MM-YY'),
 		entry    = `${now} \t${fn ? fn + ':' : ''}\t${msg}\n`,
-		filename = `logs/${today}/${filePrefix}-${today}-BTC-Real-Trader.log`;
+		filename = `logs/${today}/${filePrefix}-${today}-EntityFramework.log`;
 	//
 	
 	if (saveToFile)

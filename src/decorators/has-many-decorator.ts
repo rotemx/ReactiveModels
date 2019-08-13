@@ -1,6 +1,6 @@
 //region imports
 import {Class} from "../types/types/class";
-import {Model} from "../abstract/model";
+import {Model} from "../abstract/Model";
 import {Log} from "../utils/log";
 //endregion
 
@@ -13,7 +13,7 @@ export const hasMany = (
         Class = <Class>base.constructor,
         type = Reflect.getMetadata("design:type", base, key);
 
-    Log(`Setting HasMany key ${key} with type ${type.name}`);
+    console.log(`Setting HasMany key ${key} with type ${type.name}`);
     Class.hasMany = Class.hasMany || [];
     Class.hasMany.push({key, Class: type})
 }

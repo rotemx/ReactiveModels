@@ -1,5 +1,5 @@
 //region imports
-import {Model} from "../../abstract/model";
+import {Model} from "../../abstract/Model";
 //endregion
 
 export interface IField<T extends Model<T> = any> {

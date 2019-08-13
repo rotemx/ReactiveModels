@@ -1,5 +1,5 @@
 //region imports
-import {Model} from "./model";
+import {Model} from "./Model";
 import {json} from "../utils/jsonify";
 
 //endregion
@@ -28,11 +28,12 @@ export function setHasMany(this: Model<any>): void {
                 enumerable: true,
                 get       : () => proxy,
                 set       : (models: Model<any>[]) => {
-                    if (!Array.isArray(models) || !models.every(inst => inst instanceof Class)) {
-                        throw new Error(`Value ${json(models)} is not an array of instances of ${Class.name}.`)
+                    if (!Array.isArray(models)) {
+                        throw new Error(`HasMany: Value ${json(models)} must be an array.`)
                     }
 
-                    ref = this[`__${key}__.$hasManyRef`] = models.map(model => model._id);
+                    // const ref_prop_name = `__${key}__.$hasManyRef`;
+                    // ref = this[ref_prop_name] = models.map(model => model._id);
 
                     models.forEach(child_model => {
                         const parent = {
@@ -41,12 +42,11 @@ export function setHasMany(this: Model<any>): void {
                             collection_name: this.Class.collection_name
                         };
 
-                        child_model.parents.push(parent)
+                        child_model._parents.push(parent)
                     });
                     proxy = new Proxy(models, handler);
 
-                    if (this.auto_update_DB) {
-                        console.log(`Upserting class ${this.Class.name} with hasMany ${key} value ${json(ref)}`);
+                    if (this.Class.auto_update_DB) {
                         this.update({[key]: json(ref)})
                     }
                 }

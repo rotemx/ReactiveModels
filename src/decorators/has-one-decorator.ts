@@ -1,6 +1,6 @@
 //region imports
 import {Class} from "../types/types/class";
-import {Model} from "../abstract/model";
+import {Model} from "../abstract/Model";
 import {Log} from "../utils/log";
 //endregion
 

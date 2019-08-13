@@ -4,6 +4,7 @@ import {IEntityInitOptions} from "./types/interfaces/i-entity-init-options";
 import {Mongo} from "./db/mongo";
 import {IdbConnector} from "./types/interfaces/idb-connector";
 import {Class} from "./types/types/class";
+import {Model} from "./abstract/Model";
 
 //endregion
 
@@ -11,7 +12,16 @@ export function Entity<T extends { new(...args: any[]) }>({collection_name}: IEn
     return (Class) => {
         Class.collection_name = collection_name || (Class.name);
         Entity.Classes.push(Class);
-        return Class
+
+        return new Proxy(Class, {
+            construct(target: any, argArray: any, newTarget?: any): Model<T> {
+                let inst:Model<T> = Reflect.construct(Class, argArray);
+                inst.save();
+                inst.is_loading = false;
+                return inst
+            }
+        })
+
     }
 }
 

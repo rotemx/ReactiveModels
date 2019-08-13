@@ -1,5 +1,5 @@
 //region imports
-import {Model} from "./model";
+import {Model} from "./Model";
 import {isPrimitive} from "../utils/serialize-data";
 import {Log} from "../utils/log";
 import {proxyHandlerFactory} from "../utils/proxy-handler-factory";
@@ -34,8 +34,7 @@ export function setFields(this: Model<any>): void {
                         proxy = new Proxy(value, proxyHandlerFactory(key, this.update));
                     }
 
-                    if (this.auto_update_DB) {
-                        console.log(`Upserting class ${this.Class.name} with key ${key} value ${value}`);
+                    if (this.Class.auto_update_DB) {
                         await this.update({[key]: value})
                     }
                 }

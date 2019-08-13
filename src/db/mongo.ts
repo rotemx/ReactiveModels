@@ -5,7 +5,8 @@ import {logErr} from "../utils/log-err";
 import {IdbConnector} from "../types/interfaces/idb-connector";
 import {IDBConfig} from "../types/interfaces/idb-config";
 import {serializeData} from "../utils/serialize-data";
-import {Model} from "../abstract/model";
+import {Model} from "../abstract/Model";
+import {json} from "../utils/jsonify";
 //endregion
 
 const DEFAULT_CONFIG = {
@@ -51,10 +52,12 @@ export class Mongo implements IdbConnector {
             throw new Error('_id was not specified in upsert')
         }
         const serialized_data = serializeData({...data, _id: query._id});
+        console.log(`> Upserting \t\t ${collection_name} \t\t ${query._id} \t \t ${json(serialized_data)} \t\t`);
+
         return this
             .db
             .collection(collection_name)
-            .updateOne(query, {$set: serialized_data,}, {upsert: true});
+            .updateOne(query, {$set: serialized_data}, {upsert: true});
     }
 
 
@@ -76,19 +79,19 @@ export class Mongo implements IdbConnector {
             Log(`db.collection ${collection_name} is undefined!`, 'WTF');
             return Promise.reject('Mongo/list: no collection name provided.');
         }
-	    try {
-		    return (await this
-			    .db
-			    .collection(collection_name)
-			    .find(ids ? {_id: {$in: ids}} : {})
-			    .toArray()) || [];
-	    } catch (e) {
-        	console.log(`list: error`)
-		    console.log(e);
-	    }
+        try {
+            return (await this
+                .db
+                .collection(collection_name)
+                .find(ids ? {_id: {$in: ids}} : {})
+                .toArray()) || [];
+        } catch (e) {
+            console.log(`list: error`)
+            console.log(e);
+        }
     }
-	
-	async delete_db(): Promise<any> {
+
+    async delete_db(): Promise<any> {
         return this.db.dropDatabase()
     }
 }

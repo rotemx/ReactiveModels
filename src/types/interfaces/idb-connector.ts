@@ -1,5 +1,5 @@
 import {IDBConfig} from "./idb-config";
-import {Model} from "../../abstract/model";
+import {Model} from "../../abstract/Model";
 
 
 export interface IdbConnector {

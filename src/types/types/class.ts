@@ -1,3 +1,3 @@
-import {Model} from "../../abstract/model";
+import {Model} from "../../abstract/Model";
 
 export type Class = typeof Model;

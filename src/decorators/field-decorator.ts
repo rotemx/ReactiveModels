@@ -1,6 +1,6 @@
 //region imports
 import {Class} from "../types/types/class";
-import {Model} from "../abstract/model";
+import {Model} from "../abstract/Model";
 import {Log} from "../utils/log";
 //endregion
 
@@ -13,7 +13,7 @@ export const field = (
         Class = <Class>base.constructor,
         Type = Reflect.getMetadata("design:type", base, key);
 
-    Log(`Setting key ${key} with type ${Type.name}`);
+    // Log(`Setting key ${key} with type ${Type.name}`);
     Class.fields = Class.fields || [];
     if (!Class.fields.find(f => f.key === key)) {
         Class.fields.push({key, type: Type})
