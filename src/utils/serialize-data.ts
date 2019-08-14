@@ -3,7 +3,7 @@ import {decycle} from "json-cyclic"
 import {Model} from "../abstract/Model";
 //endregion
 
-const EXCLUDES = ['save', 'insert', 'delete', 'db', 'auto_update_DB', 'collection_name', 'fields', 'is_loading'];
+const EXCLUDES = ['save', 'insert', 'delete', 'db', 'auto_update_DB', 'collection_name', 'fields', '_is_loading'];
 
 
 export function isPrimitive(test): boolean {

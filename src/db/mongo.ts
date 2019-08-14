@@ -37,7 +37,7 @@ export class Mongo implements IdbConnector {
 			.connect(full_url, {useNewUrlParser: true})
 			.then((client) => {
 				[this.client, this.db] = [client, client.db(db_name)];
-				Log(`Connected successfully to mongo DB at ${hostname}\n`, 'Mongo/init');
+				console.log(`Mongo/init: Connected successfully to mongo DB at ${hostname}`);
 				return Promise.resolve(this)
 			})
 			.catch(err => {

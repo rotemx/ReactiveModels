@@ -33,7 +33,6 @@ export function setHasMany(this: Model<any>): void {
 					if (!Array.isArray(models)) {
 						throw new Error(`HasMany: Value ${json(models)} must be an array.`)
 					}
-					this._hasMany[key] = this._hasMany[key] || [];
 					this._hasMany[key] = models.map(m => m._id)
 
 					models.forEach(child_model => {
@@ -45,11 +44,8 @@ export function setHasMany(this: Model<any>): void {
 
 						child_model._parents.push(parent)
 					});
-					proxy = new Proxy(models, proxyHandlerFactory(key, this.update));
-
-					if (this.Class.auto_update_DB) {
-						this.update({_hasMany: this._hasMany})
-					}
+					proxy = new Proxy(models, handler);
+					this.update({_hasMany: this._hasMany})
 				}
 			})
 		})();

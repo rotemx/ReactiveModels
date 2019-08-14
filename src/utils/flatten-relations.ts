@@ -1,20 +1,11 @@
 import {Model} from "../abstract/Model";
 
 export function flattenRelations<T extends Model<T>>(this: Model<T>, data: Partial<Model<T>>) {
-	const _data = {...data}
-	/*
-	 Object.keys(_data)
-	 .filter(key => (this.Class.hasOnes || []).map(h => h.key).includes(key))
-	 .forEach(key => {
-	 return _data[key] && (_data[key] = _data[key]._id)
-	 })
+	const _data = {...data};
 
-	 Object.keys(_data)
-	 .filter(key => (this.Class.hasMany || []).map(h => h.key).includes(key))
-	 .forEach(key => {
-	 return _data[key] && (_data[key] = _data[key]
-	 .map(model => model._id))})
-	 */
+	[...Object.keys(this._hasMany), ...Object.keys(this._hasOnes)]
+		.filter(key=>_data[key] !== undefined)
+		.map(key=>delete _data[key])
 
 	return _data
 }

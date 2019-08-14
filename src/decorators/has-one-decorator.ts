@@ -12,7 +12,7 @@ export const hasOne = (
 		parent_Class = <Class>base.constructor,
 		child_Class  = Reflect.getMetadata("design:type", base, key);
 
-	Log(`Setting HasOne key ${key} with type ${child_Class.name}`);
+	console.log(`Setting HasOne key ${key} with type ${child_Class.name}`);
 	parent_Class.hasOnes = parent_Class.hasOnes || [];
 	parent_Class.hasOnes.push({key, Class: child_Class})
 }

@@ -17,7 +17,7 @@ export function Entity<T extends Model<T>>({collection_name}: IEntityDecoratorOp
 			construct(target: any, argArray: any, newTarget?: any): Model<T> {
 				const inst: Model<T> = Reflect.construct(Class, argArray);
 				inst.save();
-				inst.is_loading = false;
+				inst._is_loading = false;
 				return inst
 			}
 		})
@@ -31,10 +31,13 @@ export namespace Entity {
 	export const
 		Classes: Class[]                               = [],
 		init: (db: IEntityInitOptions) => Promise<any> = async ({db_config}: IEntityInitOptions): Promise<any> => {
-			const db_instance = db_config.mongo_instance || new Mongo();
+		console.log('[>] Entity Framework Init Start');
+		const db_instance = db_config.mongo_instance || new Mongo();
 			Entity.db = db_instance;
 			await db_instance.init(db_config)
 			await Entity.loadAll()
+			console.log('[] Entity Framework Init End');
+
 		},
 		loadAll: () => Promise<void>                   = async () => {
 			Entity.Classes.forEach(async Class => {

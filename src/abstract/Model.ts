@@ -24,9 +24,10 @@ export class Model<T extends Model<T>> {
 	static hasMany: IHasManyConfig[];
 	static auto_update_DB: boolean = true;
 	protected static instances: Model<any>[] = [];
-	_hasMany = {}
-	_hasOnes = {}
-	is_loading = true;
+
+	_hasMany: { [key: string]: string[] } = {}
+	_hasOnes: { [key: string]: string } = {}
+	_is_loading = true;
 	_id: string
 	Class: Class;
 
@@ -98,7 +99,7 @@ export class Model<T extends Model<T>> {
 
 	update = (data: Partial<Model<T>>, force_update = false): Promise<any> => {
 		data = flattenRelations.call(this, data)
-		if (force_update || (!this.is_loading && this.Class.auto_update_DB)) {
+		if (force_update || (!this._is_loading && this.Class.auto_update_DB)) {
 			return Entity.db.upsert({_id: this._id}, data, this.Class.collection_name)
 		}
 	};
