@@ -1,3 +1,3 @@
 interface IEntityDecoratorOptions {
-    collection_name?: string
+	collection_name?: string
 }

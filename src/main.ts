@@ -12,69 +12,70 @@ import {json} from "./utils/jsonify";
 
 @Entity()
 export class Dog extends Model<Dog> {
-    @field age: number;
-    @field color: string;
+	@field age: number;
+	@field color: string;
 }
 
 @Entity()
 export class Cat extends Model<Cat> {
-    @field color: string;
-    @field name: string;
+	@field color: string;
+	@field name: string;
 }
 
 @Entity()
 export class Person extends Model<Person> {
-    @field age: number = 39
-    @field name: string;
-    @hasMany brothers: Person[]
+	@field age: number;
+	@field name: string;
+	@hasMany brothers: Person[]
 
-    @hasOne cat: Cat
-    @hasOne dog: Dog
+	@hasOne cat: Cat
+	@hasOne dog: Dog
 
 }
 
 (async () => {
-    processMgmt();
-    await Entity.init({db_config: {username: MONGO_CONFIG.user, pwd: MONGO_CONFIG.pwd}});
+	processMgmt();
+	await Entity.init({db_config: {username: MONGO_CONFIG.user, pwd: MONGO_CONFIG.pwd}});
 
-    await Entity.clear_db()
+	await Entity.clear_db()
 
-    let cat = new Cat({
-        color: 'red'
-    })
+	let cat = new Cat({
+		color: 'red'
+	})
 
 
-    let dog = new Dog({
-        color: 'White',
-        age  : 11
-    })
+	let dog = new Dog({
+		color: 'White',
+		age  : 11
+	})
 
-    const
-        meishar = new Person({name: 'Meishar'}),
-        moti = new Person({name: 'Moti'}),
-        rotem = new Person({
-            age     : 39,
-            cat,
-            dog,
-            brothers: [meishar, moti]  //todo: fix hasOne / hasMany in ctor data assign
-        });
+	const
+		meishar = new Person({name: 'Meishar'}),
+		moti    = new Person({name: 'Moti'}),
+		rotem   = new Person({
+			name    : 'Rotem',
+			age     : 39,
+			cat,
+			dog,
+			brothers: [meishar, moti]  //todo: fix hasOne / _hasMany in ctor data assign
+		});
 
-    console.log(json(rotem.data));
-    //    rotem.dog = dog
+	console.log(json(rotem.data));
+	//    rotem.dog = dog
 
-    // rotem.cats.push(cat, cat2)
-    // await Person.load()
-    // console.log((jsonify((<Person>Person.instances[0]).data)));
+	// rotem.cats.push(cat, cat2)
+	// await Person.load()
+	// console.log((jsonify((<Person>Person.instances[0]).data)));
 
-    // let person2 = <Person>Person.instances[0];
-    // person2.set({
-    //     name: 'new name',
-    //     age : 23
-    // })
+	// let person2 = <Person>Person.instances[0];
+	// person2.set({
+	//     name: 'new name',
+	//     age : 23
+	// })
 
-    // person2.delete();
+	// person2.delete();
 
-    Entity.db.close()
+	Entity.db.close()
 
 })()
 
