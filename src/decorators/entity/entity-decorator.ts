@@ -1,10 +1,10 @@
 //region imports
 import "reflect-metadata";
-import {IEntityInitOptions} from "./types/interfaces/i-entity-init-options";
-import {Mongo} from "./db/mongo";
-import {IdbConnector} from "./types/interfaces/idb-connector";
-import {Class} from "./types/types/class";
-import {Model} from "./abstract/Model";
+import {IEntityInitOptions} from "../../types/interfaces/i-entity-init-options";
+import {Mongo} from "../../db/mongo";
+import {IdbConnector} from "../../types/interfaces/idb-connector";
+import {Class} from "../../types/types/class";
+import {Model} from "../../abstract/Model";
 
 //endregion
 

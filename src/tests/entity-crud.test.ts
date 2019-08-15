@@ -1,29 +1,35 @@
 //region imports
-import {Entity} from "../entity";
+import {Entity} from "../decorators/entity/entity-decorator";
 import {Mongo} from "../db/__mock__/mongo";
-import {field} from "./field-decorator";
+import {field} from "../decorators/field/field-decorator";
 import {Model} from "../abstract/Model";
+import {Class} from "../types/types/class";
 import Mock = jest.Mock;
-
 //endregion
-
-export class Person extends Model<Person> {
-	@field name
-	@field age
-}
 
 
 describe('Entity decorator', () => {
 	const mongo = new Mongo();
 
 	beforeAll(async () => {
-		await Entity.init({db_config: {username: 'blah', pwd: 'Blah', mongo_instance: mongo}},)
 	})
 
-	beforeEach(() => {
+	beforeEach(async () => {
+		await Entity.init({db_config: {username: 'blah', pwd: 'Blah', mongo_instance: mongo}})
 	});
 
+	afterEach(async () => {
+		await Entity.db.close();
+	});
+
+
 	test('creating an entity', () => {
+		@Entity()
+		class Person extends Model<Person> {
+			@field name
+			@field age
+		}
+
 		let person = new Person();
 		expect(mongo.upsert).toBeCalledTimes(1)
 		expect(person._id).toBeTruthy();
@@ -31,6 +37,12 @@ describe('Entity decorator', () => {
 	})
 
 	test('deleting an entity', () => {
+		@Entity()
+		class Person extends Model<Person> {
+			@field name
+			@field age
+		}
+
 		let person = new Person();
 		person.delete()
 		expect(mongo.delete).toBeCalledTimes(1)
@@ -38,6 +50,12 @@ describe('Entity decorator', () => {
 	})
 
 	test('setting a field directly', () => {
+		@Entity()
+		class Person extends Model<Person> {
+			@field name
+			@field age
+		}
+
 		const
 			person = new Person(),
 			name   = "Rotem";
@@ -49,6 +67,12 @@ describe('Entity decorator', () => {
 	})
 
 	test('setting multiple fields with set() method', () => {
+		@Entity()
+		class Person extends Model<Person> {
+			@field name
+			@field age
+		}
+
 		const
 			person = new Person(),
 			name   = "Rotem",

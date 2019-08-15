@@ -1,11 +1,11 @@
 //region imports
 import {processMgmt} from "./utils/process-mgmt";
 import {MONGO_CONFIG} from "./CONFIG";
-import {Entity} from "./entity";
+import {Entity} from "./decorators/entity/entity-decorator";
 import {Model} from "./abstract/Model";
-import {field} from "./decorators/field-decorator";
-import {hasOne} from "./decorators/has-one-decorator";
-import {hasMany} from "./decorators/has-many-decorator";
+import {field} from "./decorators/field/field-decorator";
+import {hasOne} from "./decorators/has-one/has-one-decorator";
+import {hasMany} from "./decorators/has-many/has-many-decorator";
 import {json} from "./utils/jsonify";
 
 //endregion
@@ -39,6 +39,7 @@ export class Person extends Model<Person> {
 
 	await Entity.clear_db()
 
+/*
 	let cat = new Cat({
 		color: 'red'
 	})
@@ -59,8 +60,30 @@ export class Person extends Model<Person> {
 			dog,
 			brothers: [meishar, moti]  //todo: fix hasOne / _hasMany in ctor data assign
 		});
+*/
 
-	console.log(json(rotem.data));
+	@Entity()
+	class Cat extends Model<Cat> {
+		@field name
+	}
+
+	@Entity()
+	class Person extends Model<Person> {
+		@field name
+		@hasMany cats: Cat[]
+	}
+
+	const
+		name   = 'John',
+		key    = 'cats',
+		cat1   = new Cat({name: 'Fluffy'}),
+		cat2   = new Cat({name: 'Skinny'}),
+		person = new Person({name});
+
+	person.cats = [cat1]
+	person.cats.push(cat2)
+
+
 	//    rotem.dog = dog
 
 	// rotem.cats.push(cat, cat2)

@@ -1,6 +1,6 @@
 //region imports
 import {Model} from "./Model";
-import {isPrimitive} from "../utils/serialize-data";
+import {isPrimitive} from "../db/serialize-data";
 import {proxyHandlerFactory} from "../utils/proxy-handler-factory";
 
 //endregion

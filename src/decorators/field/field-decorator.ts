@@ -1,6 +1,6 @@
 //region imports
-import {Class} from "../types/types/class";
-import {Model} from "../abstract/Model";
+import {Class} from "../../types/types/class";
+import {Model} from "../../abstract/Model";
 //endregion
 
 export const field = (

@@ -1,19 +1,19 @@
 //region imports
-import {getShortUuid} from "../utils/get-short-uuid";
-import {setHasOnes} from "./set-has-ones";
+import {setHasOnes} from "../decorators/has-one/set-has-ones";
 import {setFields} from "./set-fields";
 import {IHasOneConfig} from "../types/interfaces/i-has-one-config";
 import {IField} from "../types/interfaces/i-field";
-import {Entity} from "../entity";
+import {Entity} from "../decorators/entity/entity-decorator";
 import {Class} from "../types/types/class";
 import {ParentModelConfig} from "../types/interfaces/parent-model-config";
-import {setHasMany} from "./set-has-many";
+import {setHasMany} from "../decorators/has-many/set-has-many";
 import {proxyHandlerFactory} from "../utils/proxy-handler-factory";
 import {json} from "../utils/jsonify";
-import {flattenRelations} from "../utils/flatten-relations";
+import {removeDeepRelations} from "../decorators/utils/remove-deep-relations";
 import {IHasManyConfig} from "../types/interfaces/i-has-many-config";
 import moment = require("moment");
-
+import {serializeData} from "../db/serialize-data";
+import * as  shortid from 'shortid';
 //endregion
 
 
@@ -21,7 +21,7 @@ export class Model<T extends Model<T>> {
 	static collection_name: string;
 	static fields: IField[];
 	static hasOnes: IHasOneConfig[];
-	static hasMany: IHasManyConfig[];
+	static hasManys: IHasManyConfig[];
 	static auto_update_DB: boolean = true;
 	protected static instances: Model<any>[] = [];
 
@@ -40,11 +40,12 @@ export class Model<T extends Model<T>> {
 		setHasOnes.call(this);
 		setFields.call(this);
 
+		if (!this._id) {
+			this._id = `${this.Class.name}:${moment().utc().format('DD/MM/YY-HH:mm')}:${shortid.generate()}`;
+		}
+
 		if (_data) {
 			this.set(<T>_data, false)
-		}
-		if (!this._id) {
-			this._id = `${this.Class.name}:${moment().utc().format('DD-MM-YY-HH-mm')}:${getShortUuid()}`;
 		}
 
 		this.Class.instances = this.Class.instances || [];
@@ -56,7 +57,7 @@ export class Model<T extends Model<T>> {
 			'_id',
 			...this.Class.fields.map(f => f.key),
 			...this.Class.hasOnes.map(f => f.key),
-			...this.Class.hasMany.map(f => f.key)
+			...this.Class.hasManys.map(f => f.key)
 		]
 			.reduce((pre, curr) => {
 				pre[curr] = this[curr];
@@ -73,7 +74,8 @@ export class Model<T extends Model<T>> {
 	};
 
 	static async loadAll<T extends Model<T>>(): Promise<Model<T>[]> {
-		return this.instances = (await Entity.db.list(this.collection_name))
+		const results = await Entity.db.list(this.collection_name);
+		return this.instances = (results)
 			.map(data => {
 				const
 					Class: Class = Entity.Classes
@@ -93,14 +95,15 @@ export class Model<T extends Model<T>> {
 	}
 
 	save = (): Promise<any> => {
-		const data = flattenRelations.call(this, this)
-		return this.update(data, true)
+		return this.update(this, true)
 	};
 
-	update = (data: Partial<Model<T>>, force_update = false): Promise<any> => {
-		data = flattenRelations.call(this, data)
+	update = async (data: Partial<Model<T>>, force_update = false): Promise<any> => {
+
 		if (force_update || (!this._is_loading && this.Class.auto_update_DB)) {
-			return Entity.db.upsert({_id: this._id}, data, this.Class.collection_name)
+			data = removeDeepRelations.call(this, data)
+			const serialized_data = serializeData({...data, _id: this._id});
+			return Entity.db.upsert({_id: this._id}, serialized_data, this.Class.collection_name)
 		}
 	};
 

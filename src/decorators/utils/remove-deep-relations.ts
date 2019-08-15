@@ -1,6 +1,6 @@
-import {Model} from "../abstract/Model";
+import {Model} from "../../abstract/Model";
 
-export function flattenRelations<T extends Model<T>>(this: Model<T>, data: Partial<Model<T>>) {
+export function removeDeepRelations<T extends Model<T>>(this: Model<T>, data: Partial<Model<T>>) {
 	const _data = {...data};
 
 	[...Object.keys(this._hasMany), ...Object.keys(this._hasOnes)]

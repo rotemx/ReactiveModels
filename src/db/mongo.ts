@@ -4,7 +4,7 @@ import {Log} from "../utils/Log";
 import {logErr} from "../utils/log-err";
 import {IdbConnector} from "../types/interfaces/idb-connector";
 import {IDBConfig} from "../types/interfaces/idb-config";
-import {serializeData} from "../utils/serialize-data";
+import {serializeData} from "./serialize-data";
 import {Model} from "../abstract/Model";
 import {json} from "../utils/jsonify";
 //endregion
@@ -51,15 +51,13 @@ export class Mongo implements IdbConnector {
 		if (!query._id) {
 			throw new Error('_id was not specified in upsert')
 		}
-		const serialized_data = serializeData({...data, _id: query._id});
-		console.log(`> Upserting \t\t ${collection_name} \t\t ${query._id} \t \t ${json(serialized_data)} \t\t`);
+		console.log(`> Upserting \t\t ${collection_name} \t\t ${query._id} \t \t ${json(data)} \t\t`);
 
 		return this
 			.db
 			.collection(collection_name)
-			.updateOne(query, {$set: serialized_data}, {upsert: true});
+			.updateOne(query, {$set: data}, {upsert: true});
 	}
-
 
 	delete(item, collection_name: string): Promise<any> {
 		if (!item) return Promise.reject('Mongo/delete: no item provided.');
@@ -86,7 +84,7 @@ export class Mongo implements IdbConnector {
 				.find(ids ? {_id: {$in: ids}} : {})
 				.toArray()) || [];
 		} catch (e) {
-			console.log(`list: error`)
+			console.error(`mongo:list:error`)
 			console.log(e);
 		}
 	}
