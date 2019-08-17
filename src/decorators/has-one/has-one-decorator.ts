@@ -13,6 +13,6 @@ export const hasOne = (
 		child_Class  = Reflect.getMetadata("design:type", base, key);
 
 	console.log(`Setting HasOne key ${key} with type ${child_Class.name}`);
-	parent_Class.hasOnes = parent_Class.hasOnes || [];
-	parent_Class.hasOnes.push({key, Class: child_Class})
+	parent_Class.hasOnes = parent_Class.hasOnes || {};
+	parent_Class.hasOnes[key] = child_Class;
 }

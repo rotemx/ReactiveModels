@@ -11,37 +11,47 @@ import {proxyHandlerFactory} from "../utils/proxy-handler-factory";
 import {json} from "../utils/jsonify";
 import {removeDeepRelations} from "../decorators/utils/remove-deep-relations";
 import {IHasManyConfig} from "../types/interfaces/i-has-many-config";
-import moment = require("moment");
 import {serializeData} from "../db/serialize-data";
 import * as  shortid from 'shortid';
+import moment = require("moment");
+
+export type HasManyInstancesDic = { [key: string]: string[] };
+export type HasOneInstancesDic = { [key: string]: string };
+
 //endregion
 
+export type PartialModel = Partial<Model<any>>;
 
 export class Model<T extends Model<T>> {
+	static __entity__: boolean;
 	static collection_name: string;
 	static fields: IField[];
-	static hasOnes: IHasOneConfig[];
-	static hasManys: IHasManyConfig[];
-	static auto_update_DB: boolean = true;
+	static hasOnes: IHasOneConfig;
+	static hasManys: IHasManyConfig;
+	// static auto_update_DB: boolean = true;
 	protected static instances: Model<any>[] = [];
 
-	_hasMany: { [key: string]: string[] } = {}
-	_hasOnes: { [key: string]: string } = {}
+	_hasManys: HasManyInstancesDic = {}
+	_hasOnes: HasOneInstancesDic = {}
 	_is_loading = true;
 	_id: string
 	Class: Class;
+	private auto_update_DB = true;
 
 	constructor(_data?: Partial<T>) {
 		if (!Entity.db) {
 			throw new Error('Entity db not initialized')
 		}
 		this.Class = <typeof Model>(this.constructor);
+		if (!this.Class.__entity__) {
+			throw new Error(`${this.Class.name} is not an Entity. Did you forget to call the Entity() decorator?`)
+		}
 		setHasMany.call(this);
 		setHasOnes.call(this);
 		setFields.call(this);
 
 		if (!this._id) {
-			this._id = `${this.Class.name}:${moment().utc().format('DD/MM/YY-HH:mm')}:${shortid.generate()}`;
+			this._id = `${this.Class.name}:${moment().utc().format('DD-MM-YY--HH:mm')}:${shortid.generate()}`;
 		}
 
 		if (_data) {
@@ -56,8 +66,8 @@ export class Model<T extends Model<T>> {
 		return [
 			'_id',
 			...this.Class.fields.map(f => f.key),
-			...this.Class.hasOnes.map(f => f.key),
-			...this.Class.hasManys.map(f => f.key)
+			...Object.keys(this.Class.hasOnes),
+			...Object.keys(this.Class.hasManys),
 		]
 			.reduce((pre, curr) => {
 				pre[curr] = this[curr];
@@ -65,12 +75,17 @@ export class Model<T extends Model<T>> {
 			}, {})
 	}
 
-	static get<T extends Model<T>>(_ids: string | string[]): Model<T>[] {
+	static get<T extends Model<T>>(this: Class, _ids: string | string[]): Model<T>[] {
 		if (!_ids) return null;
 		if (typeof _ids === 'string') {
 			_ids = [_ids]
 		}
-		return this.instances.filter(inst => _ids.includes(inst._id))
+		const results = <Model<T>[]>this.instances.filter(inst => _ids.includes(inst._id));
+
+		if (results.length !== _ids.length) {
+			console.warn(`Cannot find some or all child model with id included in ${json(_ids)} of class ${this.name}`);
+		}
+		return results
 	};
 
 	static async loadAll<T extends Model<T>>(): Promise<Model<T>[]> {
@@ -85,10 +100,9 @@ export class Model<T extends Model<T>> {
 	}
 
 	async set(data: Partial<T>, save_after = true) {
-		const auto_update = this.Class.auto_update_DB;
-		this.Class.auto_update_DB = false;
+		this.auto_update_DB = false;
 		Object.assign(this, data)
-		this.Class.auto_update_DB = auto_update;
+		this.auto_update_DB = true;
 		if (save_after) {
 			await this.update(data)
 		}
@@ -99,21 +113,53 @@ export class Model<T extends Model<T>> {
 	};
 
 	update = async (data: Partial<Model<T>>, force_update = false): Promise<any> => {
-
-		if (force_update || (!this._is_loading && this.Class.auto_update_DB)) {
+		if (force_update || (!this._is_loading && this.auto_update_DB)) {
 			data = removeDeepRelations.call(this, data)
-			const serialized_data = serializeData({...data, _id: this._id});
+			const serialized_data = serializeData({...data});
 			return Entity.db.upsert({_id: this._id}, serialized_data, this.Class.collection_name)
 		}
 	};
 
-	_parents: ParentModelConfig[] = new Proxy([], proxyHandlerFactory('_parents', this.update.bind(this)))
+	removeParent(parent: Model<T>, key: string): void {
+		let idx = this._parents.findIndex(p => p._id === parent._id);
+		if (idx === -1) {
+			console.warn(`EntityFramework: removeParent: Cannot find ${key} parent _id ${this._id} in child ${this._id} of class ${this.Class.name}, so cannot remove it. Weird. `);
+			return
+		}
+		this._parents.splice(idx, 1)
+	}
+
+	addParent(parent: Model<T>, key: string): void {
+		let idx = this._parents.findIndex(p => p._id === this._id);
+		if (idx > -1) {
+			console.warn(`EntityFramework: setParent: Found old ${key} parent _id ${this._id} in child ${this._id} of class ${this.Class.name}. Weird. `);
+			this._parents.splice(idx, 1)
+		}
+		this._parents.push({
+			_id            : parent._id,
+			key,
+			collection_name: parent.Class.collection_name
+		})
+	}
+
+	getParents(): Model<T>[] {
+		return this._parents.map(parent_config => {
+			const
+				parent_Class: Class = Entity.Classes.find(c => c.collection_name === parent_config.collection_name),
+				result              = parent_Class.get<T>(parent_config._id);
+
+			return result.length ? result[0] : null
+		}).filter(Boolean)
+
+	}
+
+	protected _parents: ParentModelConfig[] = new Proxy([], proxyHandlerFactory('_parents', this.update.bind(this)))
 
 	async getParentModels(): Promise<Model<T>[]> {
 		return this.Class.get<T>(this._parents.map(p => p._id))
 	}
 
-	delete = (): Promise<any> => {
+	delete = (): Promise<void> => {
 		return Entity.db.delete({_id: this._id}, this.Class.collection_name)
 			.then(async () => {
 				const parent_models = await this.getParentModels();
@@ -126,15 +172,20 @@ export class Model<T extends Model<T>> {
 						parent_model[p.key] = undefined
 					}
 				}
-				for (let hasOne of this.Class.hasOnes || []) {
-					const child_Class = Entity.Classes.find(cl => cl.collection_name === hasOne.Class.collection_name)
+
+				for (let coll_name of Object.keys(this._hasOnes)) {
+					const child_Class = <Class>Entity.Classes.find(cl => cl.collection_name === coll_name)
 					if (!child_Class) {
-						throw new Error(`Child Class not found for ${json(hasOne)}`)
+						throw new Error(`Child Class not found for collection name ${json(coll_name)}`)
 					}
-					let
-						child_instance = (await child_Class.get(this[hasOne.key])),
-						index          = child_instance[0]._parents.findIndex(p => p.key == this[hasOne.key]);
-					child_instance[0]._parents.splice(index, 1)
+					const
+						child_id        = this._hasOnes[coll_name],
+						child_instances = child_Class.get<T>(child_id);
+					if (!child_instances.length) return;
+					const
+						index = child_instances[0]._parents.findIndex(p => p._id === this._id);
+
+					child_instances[0]._parents.splice(index, 1)
 				}
 				await this.Class.loadAll()
 			})

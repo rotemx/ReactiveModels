@@ -2,10 +2,9 @@
 import {Entity} from "../decorators/entity/entity-decorator";
 import {Mongo} from "../db/__mock__/mongo";
 import {field} from "../decorators/field/field-decorator";
-import {Model} from "../abstract/Model";
+import {Model, PartialModel} from "../abstract/Model";
 import {hasOne} from "../decorators/has-one/has-one-decorator";
 import {hasMany} from "../decorators/has-many/has-many-decorator";
-import {IHasManyConfig} from "../types/interfaces/i-has-many-config";
 import Mock = jest.Mock;
 
 //endregion
@@ -16,73 +15,98 @@ export class Person extends Model<Person> {
 	@field age: number
 }
 
+
 describe('Relations', () => {
-	const mongo = new Mongo();
+	const
+		mongo       = new Mongo(),
+		upsert_mock = <Mock>mongo.upsert,
+		upsert_calls = upsert_mock.mock.calls;
 
 	beforeEach(async () => {
 		await Entity.init({db_config: {username: 'blah', pwd: 'Blah', mongo_instance: mongo}})
 	});
 
+	afterEach(async () => {
+		upsert_mock.mockClear();
+	})
+
 	test('hasOne sanity with same-class child', () => {
 		@Entity()
 		class Person extends Model<Person> {
 			@field name
-			@hasOne brother: Person
+			@hasOne child: Person
 		}
 
 		const
-			key     = 'brother',
-			person1 = new Person({name: 'person1'}),
-			person2 = new Person({name: 'person2', [key]: person1})
+			key    = 'child',
+			child  = new Person({name: 'child'}),
+			parent = new Person({name: 'parent', child})
 
-		expect(person2._hasOnes[key] === person1._id)
-		expect(person1._parents[0].key === key)
-		expect(person1._parents[0]._id === person1._id)
-		expect(person1._parents[0].collection_name === Person.collection_name)
+		expect(parent._hasOnes[key] === child._id)
+		expect((<any>child)._parents[0].key === key)
+		expect((<any>child)._parents[0]._id === child._id)
+		expect((<any>child)._parents[0].collection_name === Person.collection_name)
 
-		expect(person2.brother._id === person1._id)
+		expect(parent.child._id === child._id)
 
-		const upsert_calls = (<Mock>mongo.upsert).mock.calls;
-		expect(upsert_calls.length).toEqual(2)
-		expect(upsert_calls.find(params => params[0]._id === person2._id)[1]._hasOnes[key] === person1._id).toBeTruthy()
-		expect(upsert_calls.find(params => params[0]._id === person1._id)[1]).toBeTruthy()
+		expect(upsert_mock).toHaveBeenCalledWith({_id: child._id}, expect.objectContaining({name: 'child'}), Person.collection_name)
+		expect(upsert_mock).toHaveBeenCalledWith({_id: parent._id}, expect.objectContaining({name: 'parent'}), Person.collection_name)
+
+		expect(upsert_mock).toHaveBeenCalledWith({_id: parent._id}, expect.objectContaining(<Partial<Model<Person>>>{_hasOnes: {[key]: child._id}}), Person.collection_name)
+
+		expect(upsert_mock).toHaveBeenCalledWith({_id: child._id}, expect.objectContaining(<Partial<Model<Person>>>{
+			_parents: [{
+				_id            : parent._id,
+				collection_name: Person.collection_name,
+				key
+			}]
+		}), Person.collection_name)
+
 	})
 
 	test('hasOne sanity with different-class child', () => {
 
 		@Entity()
 		class Dog extends Model<Dog> {
-			@field name : string
+			@field name: string
 		}
 
 		@Entity()
 		class Person extends Model<Person> {
-			@field name : string
+			@field name: string
 			@hasOne dog: Dog
 		}
 
 		const
 			name   = 'John',
 			key    = 'dog',
-			dog    = new Dog({name: 'Ralf',}),
+			dog    = new Dog({name: 'Sparky',}),
 			person = new Person({name, dog});
 
 		expect(person._hasOnes[key] === dog._id)
-		expect(Person.hasOnes[0].Class).toBe(Dog);
-		expect(Person.hasOnes[0].key).toBe(key);
+		expect(Person.hasOnes[key]).toBeTruthy();
+		expect(Person.hasOnes[key]).toBe(Dog);
 
 
-		expect(dog._parents[0].key === key)
-		expect(dog._parents[0]._id === person._id)
-		expect(dog._parents[0].collection_name === Person.collection_name)
+		expect((<any>dog)._parents[0].key === key)
+		expect((<any>dog)._parents[0]._id === person._id)
+		expect((<any>dog)._parents[0].collection_name === Person.collection_name)
 
 		expect(person.dog._id === dog._id)
 
-		const upsert_calls = (<Mock>mongo.upsert).mock.calls;
-		expect(upsert_calls.length).toEqual(3)
-		expect(upsert_calls.find(params => params[0]._id === person._id)[1].name).toEqual(name)
-		expect(upsert_calls.find(params => params[0]._id === person._id)[1]._hasOnes[key] === dog._id).toBeTruthy()
-		expect(upsert_calls.find(params => params[0]._id === dog._id)[1]).toBeTruthy()
+		expect(upsert_mock).toHaveBeenCalledWith({_id: person._id}, expect.objectContaining({name: 'John'}), Person.collection_name)
+		expect(upsert_mock).toHaveBeenCalledWith({_id: dog._id}, expect.objectContaining({name: 'Sparky'}), Dog.collection_name)
+
+		expect(upsert_mock).toHaveBeenCalledWith({_id: person._id}, expect.objectContaining(<Partial<Model<Person>>>{_hasOnes: {[key]: dog._id}}), Person.collection_name)
+		expect(upsert_mock).toHaveBeenCalledWith({_id: dog._id}, <Partial<Model<Dog>>>{
+			_parents: [
+				{
+					_id            : person._id,
+					collection_name: Person.collection_name,
+					key            : 'dog'
+				}
+			]
+		}, Dog.collection_name)
 	})
 
 
@@ -99,43 +123,168 @@ describe('Relations', () => {
 		}
 
 		const
-			name   = 'John',
 			key    = 'cats',
 			cat1   = new Cat({name: 'Fluffy'}),
 			cat2   = new Cat({name: 'Skinny'}),
-			person = new Person({name});
+			person = new Person({name: 'John'});
 
 		person.cats = [cat1]
 		person.cats.push(cat2)
 
-		expect(person._hasMany[key]).toEqual([cat1._id, cat2._id])
-		// expect(Person.hasManys[0].Class).toBe(Cat); //not working - TS
-		expect(Person.hasManys[0].key).toBe(key);
+		expect(person._hasManys[key]).toContain(cat1._id)
+		expect(person._hasManys[key]).toContain(cat2._id)
+
+		expect(Person.hasManys).toEqual({cats: Array});
 
 
-		expect(cat1._parents[0]).toEqual({
-			_id:person._id,
+		expect((<any>cat1)._parents[0]).toEqual({
+			_id            : person._id,
 			key,
-			collection_name:Person.collection_name
+			collection_name: Person.collection_name
 		})
-		expect(cat2._parents[0]).toEqual({
-			_id:person._id,
+		expect((<any>cat2)._parents[0]).toEqual({
+			_id            : person._id,
 			key,
-			collection_name:Person.collection_name
+			collection_name: Person.collection_name
 		})
-
 
 		expect(person.cats[0]._id === cat1._id)
 		expect(person.cats[1]._id === cat2._id)
 
-		const upsert_calls = (<Mock>mongo.upsert).mock.calls;
-		expect(upsert_calls.length).toEqual(7)
-		expect(upsert_calls.find(params => params[0]._id === person._id)[1].name).toEqual(name)
-		expect(upsert_calls.filter(arr=>arr.find(param=>param===Person.name)).find(arr=>arr[1] && arr[1]._hasMany && arr[1]._hasMany[key] && arr[1]._hasMany[key].length===2)).toBeTruthy()
+		expect(upsert_mock).toHaveBeenCalledWith({_id: cat1._id}, expect.objectContaining({name: 'Fluffy'}), Cat.collection_name)
+		expect(upsert_mock).toHaveBeenCalledWith({_id: cat2._id}, expect.objectContaining({name: 'Skinny'}), Cat.collection_name)
+		expect(upsert_mock).toHaveBeenCalledWith({_id: person._id}, expect.objectContaining({name: 'John'}), Person.collection_name)
 
-		expect(upsert_calls.find(params => params[0]._id === cat1._id)[1]).toBeTruthy()
-		expect(upsert_calls.find(params => params[0]._id === cat2._id)[1]).toBeTruthy()
+		expect(upsert_mock).toHaveBeenCalledWith({_id: person._id}, expect.objectContaining(<Partial<Model<Person>>>{_hasManys: {cats: [cat1._id, cat2._id]}}), Person.collection_name)
+		expect(upsert_mock).toHaveBeenCalledWith({_id: cat1._id}, expect.objectContaining(<Partial<Model<Cat>>>{
+			_parents: [{
+				_id            : person._id,
+				collection_name: Person.collection_name,
+				key            : 'cats'
+			}]
+		}), Cat.collection_name)
+
 	})
 
+	test('remove hasOne relation', () => {
+		@Entity()
+		class Person extends Model<Person> {
+			@field name
+			@hasOne child: Person
+		}
 
+		const
+			key    = 'child',
+			child  = new Person({name: 'child'}),
+			parent = new Person({name: 'parent', child});
+
+		parent[key] = undefined
+
+		expect(parent[key]).toBeNull()
+		expect(parent._hasOnes[key]).toBeUndefined()
+		expect((<any>child)._parents.find(p => p._id === child._id)).toBeUndefined()
+
+		expect(upsert_mock).toHaveBeenCalledWith({_id: child._id}, expect.objectContaining({name: 'child'}), Person.collection_name)
+		expect(upsert_mock).toHaveBeenCalledWith({_id: parent._id}, expect.objectContaining({name: 'parent'}), Person.collection_name)
+		expect(upsert_mock).toHaveBeenCalledWith({_id: parent._id}, expect.objectContaining({_hasOnes: {[key]: child._id}}), Person.collection_name)
+		expect(upsert_mock).toHaveBeenCalledWith({_id: parent._id}, expect.objectContaining({_hasOnes: {}}), Person.collection_name)
+
+	})
+
+	test('remove hasMany relation with [] assignments', () => {
+		@Entity()
+		class Cat extends Model<Cat> {
+			@field name
+			// @hasOne person: Person
+		}
+
+		@Entity()
+		class Person extends Model<Person> {
+			@field name
+			@hasMany cats: Cat[]
+		}
+
+		const
+			cat1   = new Cat({name: 'Mitzy'}),
+			person = new Person({name: 'person', cats: [cat1]});
+
+		person.cats = []
+
+		expect(person.cats).toEqual([])
+		expect((<any>cat1)._parents.length).toEqual(0)
+		expect((<any>cat1)._parents.find(p => p._id === person._id)).toBeUndefined()
+
+		expect(upsert_mock).toHaveBeenCalledWith({_id: person._id}, expect.objectContaining(<PartialModel>{_hasManys: {"cats": [cat1._id]}}), Person.collection_name)
+		expect(upsert_mock).toHaveBeenCalledWith({_id: person._id}, <PartialModel>{_hasManys: {"cats": []}}, Person.collection_name)
+	})
+
+	test('remove hasMany relation with pop() or length', () => {
+		@Entity()
+		class Cat extends Model<Cat> {
+			@field name
+		}
+
+		@Entity()
+		class Person extends Model<Person> {
+			@field name
+			@hasMany cats: Cat[]
+		}
+
+		const
+			cat1   = new Cat({name: 'Mitzy'}),
+			person = new Person({name: 'person', cats: [cat1]});
+
+		// person.cats.pop()
+		person.cats.length = 0;
+
+		expect(person.cats).toEqual([])
+		expect((<any>cat1)._parents.length).toEqual(0)
+		expect((<any>cat1)._parents.find(p => p._id === person._id)).toBeUndefined()
+
+		expect(upsert_mock).toHaveBeenCalledWith({_id: person._id}, expect.objectContaining(<PartialModel>{_hasManys: {"cats": [cat1._id]}}), Person.collection_name)
+		expect(upsert_mock).toHaveBeenCalledWith({_id: person._id}, <PartialModel>{_hasManys: {"cats": []}}, Person.collection_name)
+	})
+
+	test('remove some hasMany relations from the array with length or splice', () => {
+		@Entity()
+		class Cat extends Model<Cat> {
+			@field name
+		}
+
+		@Entity()
+		class Person extends Model<Person> {
+			@field name
+			@hasMany cats: Cat[]
+		}
+
+		const
+			cat1   = new Cat({name: 'Mitzy'}),
+			cat2   = new Cat({name: 'Mitzy2'}),
+			cat3   = new Cat({name: 'Mitzy3'}),
+			person = new Person({name: 'person', cats: [cat1,cat2, cat3]});
+
+		person.cats = [cat1];
+
+		expect(person.cats).toEqual([cat1])
+		expect((<any>cat1)._parents.length).toEqual(1)
+		expect((<any>cat2)._parents.length).toEqual(0)
+		expect((<any>cat3)._parents.length).toEqual(0)
+
+		expect((<any>cat1)._parents.find(p => p._id === person._id)).toBeTruthy()
+		expect((<any>cat2)._parents.find(p => p._id === person._id)).toBeUndefined()
+		expect((<any>cat3)._parents.find(p => p._id === person._id)).toBeUndefined()
+
+		expect(upsert_mock).toHaveBeenCalledWith({_id: person._id}, expect.objectContaining(<PartialModel>{_hasManys: {cats: [cat1._id,cat2._id, cat3._id]}}), Person.collection_name)
+		expect(upsert_mock).toHaveBeenCalledWith({_id: person._id}, <PartialModel>{_hasManys: {"cats": [cat1._id]}}, Person.collection_name)
+
+		const cat4 = new Cat({name:'Shmooli'});
+		person.cats.push(cat4)
+
+		expect(person.cats).toEqual([cat1, cat2])
+		expect(upsert_mock).toHaveBeenCalledWith({_id: person._id}, expect.objectContaining(<PartialModel>{_hasManys: {cats: [cat1._id, cat4._id]}}), Person.collection_name)
+
+		expect((<any>cat1)._parents.find(p => p._id === person._id)).toBeTruthy()
+		expect((<any>cat4)._parents.find(p => p._id === person._id)).toBeTruthy()
+
+	})
 });

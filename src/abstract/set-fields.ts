@@ -32,10 +32,7 @@ export function setFields(this: Model<any>): void {
 						mode = "object"
 						proxy = new Proxy(value, proxyHandlerFactory(key, this.update));
 					}
-
-					if (this.Class.auto_update_DB) {
-						await this.update({[key]: value})
-					}
+					await this.update({[key]: value})
 				}
 			})
 		})();

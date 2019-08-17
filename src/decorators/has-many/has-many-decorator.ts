@@ -10,15 +10,15 @@ export const hasMany = (
 
 	const
 		Class = <Class>base.constructor,
-		type  = Reflect.getMetadata("design:type", base, key);
+		Type  = Reflect.getMetadata("design:type", base, key);
 
-	if (type !== Array)
+	if (Type !== Array)
 	{
 		throw new Error(`A hasMany type must be an array of Models`)
 	}
 
-	console.log(`Setting HasMany key ${key} with type ${type.name}`);
-	Class.hasManys = Class.hasManys || [];
-	Class.hasManys.push({key, Class: type})
+	console.log(`Setting HasMany key ${key} with type ${Type.name}`);
+	Class.hasManys = Class.hasManys || {};
+	Class.hasManys[key] = Type
 }
 

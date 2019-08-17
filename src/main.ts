@@ -6,7 +6,6 @@ import {Model} from "./abstract/Model";
 import {field} from "./decorators/field/field-decorator";
 import {hasOne} from "./decorators/has-one/has-one-decorator";
 import {hasMany} from "./decorators/has-many/has-many-decorator";
-import {json} from "./utils/jsonify";
 
 //endregion
 
@@ -39,28 +38,28 @@ export class Person extends Model<Person> {
 
 	await Entity.clear_db()
 
-/*
-	let cat = new Cat({
-		color: 'red'
-	})
+	/*
+	 let cat = new Cat({
+	 color: 'red'
+	 })
 
 
-	let dog = new Dog({
-		color: 'White',
-		age  : 11
-	})
+	 let dog = new Dog({
+	 color: 'White',
+	 age  : 11
+	 })
 
-	const
-		meishar = new Person({name: 'Meishar'}),
-		moti    = new Person({name: 'Moti'}),
-		rotem   = new Person({
-			name    : 'Rotem',
-			age     : 39,
-			cat,
-			dog,
-			brothers: [meishar, moti]  //todo: fix hasOne / _hasMany in ctor data assign
-		});
-*/
+	 const
+	 meishar = new Person({name: 'Meishar'}),
+	 moti    = new Person({name: 'Moti'}),
+	 rotem   = new Person({
+	 name    : 'Rotem',
+	 age     : 39,
+	 cat,
+	 dog,
+	 brothers: [meishar, moti]  //todo: fix hasOne / _hasManys in ctor data assign
+	 });
+	 */
 
 	@Entity()
 	class Cat extends Model<Cat> {
@@ -74,16 +73,14 @@ export class Person extends Model<Person> {
 	}
 
 	const
-		name   = 'John',
-		key    = 'cats',
-		cat1   = new Cat({name: 'Fluffy'}),
-		cat2   = new Cat({name: 'Skinny'}),
-		person = new Person({name});
-
-	person.cats = [cat1]
-	person.cats.push(cat2)
+		cat1   = new Cat({name: 'Mitzy'}),
+		cat2   = new Cat({name: 'Mourice'}),
+		cat3   = new Cat({name: 'Phillipe'}),
+		person = new Person({name: 'person', cats: [cat1, cat2, cat3]});
 
 
+	// person.cats[2].name = "Boris"
+	delete person.cats[2]
 	//    rotem.dog = dog
 
 	// rotem.cats.push(cat, cat2)

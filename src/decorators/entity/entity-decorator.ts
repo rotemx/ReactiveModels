@@ -12,7 +12,7 @@ export function Entity<T extends Model<T>>({collection_name}: IEntityDecoratorOp
 	return (Class) => {
 		Class.collection_name = collection_name || (Class.name);
 		Entity.Classes.push(Class);
-
+		Class.__entity__ = true;
 		return new Proxy(Class, {
 			construct(target: any, argArray: any, newTarget?: any): Model<T> {
 				const inst: Model<T> = Reflect.construct(Class, argArray);
