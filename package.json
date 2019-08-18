@@ -1,32 +1,38 @@
 {
-  "name": "unitrader",
-  "version": "1.0.0",
-  "description": "Entity Framework for Node.js and MongoDB",
+  "name": "@rotemxdev/reactive-models",
+  "version": "0.1.0",
+  "description": "Reactive Model ORM / Entity Framework for Node.js and MongoDB by rotemx@gmail.com",
   "main": "index.js",
   "scripts": {
     "test": "jest"
   },
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rotemx/EntityFramework.git"
+  },
   "author": "Rotem X. Meiri - rotemx@gmail.com",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rotemx/EntityFramework/issues"
+  },
+  "homepage": "https://github.com/rotemx/EntityFramework#readme",
   "dependencies": {
+    "fs-extra": "^7.0.1",
+    "json-cyclic": "0.0.3",
+    "moment": "^2.24.0",
+    "mongodb": "^3.2.7",
+    "reflect-metadata": "^0.1.13",
+    "shortid": "^2.2.14"
+  },
+  "devDependencies": {
+    "ts-jest": "^24.0.2",
+    "jest-cli": "^24.8.0",
     "@types/fs-extra": "^5.0.4",
     "@types/jest": "^24.0.17",
-    "@types/lodash": "^4.14.119",
     "@types/moment": "^2.13.0",
     "@types/mongodb": "^3.1.31",
     "@types/node": "^10.12.18",
-    "fs-extra": "^7.0.1",
-    "jest-cli": "^24.8.0",
-    "json-cyclic": "0.0.3",
-    "lodash": "^4.17.11",
-    "moment": "^2.24.0",
-    "mongodb": "^3.2.7",
-    "node-fetch": "^2.3.0",
-    "reflect-metadata": "^0.1.13",
-    "shortid": "^2.2.14",
-    "ts-jest": "^24.0.2"
-  },
-  "devDependencies": {
-    "@babel/preset-typescript": "^7.3.3",
     "jest": "^24.8.0",
     "typescript": "^3.5.3"
   }
