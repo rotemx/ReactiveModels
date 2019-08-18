@@ -1,5 +1,5 @@
 {
-  "name": "@rotemxdev/reactive-models",
+  "name": "@rotemx/reactive-models",
   "version": "0.1.0",
   "description": "Reactive Model ORM / Entity Framework for Node.js and MongoDB by rotemx@gmail.com",
   "main": "index.js",
