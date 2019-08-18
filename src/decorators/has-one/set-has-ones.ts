@@ -1,5 +1,5 @@
 //region imports
-import {Model} from "../../abstract/Model";
+import {Model} from "../../model/Model";
 import {json} from "../../utils/jsonify";
 
 //endregion

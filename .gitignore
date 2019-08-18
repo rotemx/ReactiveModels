@@ -106,3 +106,7 @@ out
 gen
 data
 /src/csv-generator/csv/
+.rts2_cache_cjs/
+build/
+dist/
+lib/

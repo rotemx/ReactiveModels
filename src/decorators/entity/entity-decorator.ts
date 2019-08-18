@@ -4,12 +4,13 @@ import {IEntityInitOptions} from "../../types/interfaces/i-entity-init-options";
 import {Mongo} from "../../db/mongo";
 import {IdbConnector} from "../../types/interfaces/idb-connector";
 import {Class} from "../../types/types/class";
-import {Model} from "../../abstract/Model";
+import {Model} from "../../model/Model";
+import {IEntityDecoratorOptions} from "../../types/interfaces/i-entity-decorator-options";
 
 //endregion
 
 export function Entity<T extends Model<T>>({collection_name}: IEntityDecoratorOptions = {}) {
-	return (Class) => {
+	return (Class:Class) => {
 		Class.collection_name = collection_name || (Class.name);
 		Entity.Classes.push(Class);
 		Class.__entity__ = true;

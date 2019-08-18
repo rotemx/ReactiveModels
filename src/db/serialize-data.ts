@@ -1,12 +1,12 @@
 //region imports
 import {decycle} from "json-cyclic"
-import {Model} from "../abstract/Model";
+import {Model} from "../model/Model";
 //endregion
 
 const EXCLUDES = ['save', 'insert', 'delete', 'db', 'auto_update_DB', 'collection_name', 'fields', '_is_loading'];
 
 
-export function isPrimitive(test): boolean {
+export function isPrimitive(test:any): boolean {
 	return (test !== Object(test));
 }
 

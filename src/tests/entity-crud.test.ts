@@ -2,7 +2,7 @@
 import {Entity} from "../decorators/entity/entity-decorator";
 import {Mongo} from "../db/__mock__/mongo";
 import {field} from "../decorators/field/field-decorator";
-import {Model} from "../abstract/Model";
+import {Model} from "../model/Model";
 import {Class} from "../types/types/class";
 import Mock = jest.Mock;
 //endregion

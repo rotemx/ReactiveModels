@@ -2,7 +2,7 @@
 import {Entity} from "../decorators/entity/entity-decorator";
 import {Mongo} from "../db/__mock__/mongo";
 import {field} from "../decorators/field/field-decorator";
-import {Model, PartialModel} from "../abstract/Model";
+import {Model, PartialModel} from "../model/Model";
 import {hasOne} from "../decorators/has-one/has-one-decorator";
 import {hasMany} from "../decorators/has-many/has-many-decorator";
 import Mock = jest.Mock;
@@ -18,8 +18,8 @@ export class Person extends Model<Person> {
 
 describe('Relations', () => {
 	const
-		mongo       = new Mongo(),
-		upsert_mock = <Mock>mongo.upsert,
+		mongo        = new Mongo(),
+		upsert_mock  = <Mock>mongo.upsert,
 		upsert_calls = upsert_mock.mock.calls;
 
 	beforeEach(async () => {
@@ -258,10 +258,12 @@ describe('Relations', () => {
 		}
 
 		const
-			cat1   = new Cat({name: 'Mitzy'}),
-			cat2   = new Cat({name: 'Mitzy2'}),
-			cat3   = new Cat({name: 'Mitzy3'}),
-			person = new Person({name: 'person', cats: [cat1,cat2, cat3]});
+			cat1   = new Cat({name: 'Cat1'}),
+			cat2   = new Cat({name: 'Cat2'}),
+			cat3   = new Cat({name: 'Cat3'}),
+			person = new Person({name: 'person', cats: [cat1, cat2, cat3]});
+
+		expect(person.cats).toEqual([cat1, cat2, cat3])
 
 		person.cats = [cat1];
 
@@ -274,13 +276,13 @@ describe('Relations', () => {
 		expect((<any>cat2)._parents.find(p => p._id === person._id)).toBeUndefined()
 		expect((<any>cat3)._parents.find(p => p._id === person._id)).toBeUndefined()
 
-		expect(upsert_mock).toHaveBeenCalledWith({_id: person._id}, expect.objectContaining(<PartialModel>{_hasManys: {cats: [cat1._id,cat2._id, cat3._id]}}), Person.collection_name)
+		expect(upsert_mock).toHaveBeenCalledWith({_id: person._id}, expect.objectContaining(<PartialModel>{_hasManys: {cats: [cat1._id, cat2._id, cat3._id]}}), Person.collection_name)
 		expect(upsert_mock).toHaveBeenCalledWith({_id: person._id}, <PartialModel>{_hasManys: {"cats": [cat1._id]}}, Person.collection_name)
 
-		const cat4 = new Cat({name:'Shmooli'});
+		const cat4 = new Cat({name: 'Cat4'});
 		person.cats.push(cat4)
 
-		expect(person.cats).toEqual([cat1, cat2])
+		expect(person.cats).toEqual([cat1, cat4])
 		expect(upsert_mock).toHaveBeenCalledWith({_id: person._id}, expect.objectContaining(<PartialModel>{_hasManys: {cats: [cat1._id, cat4._id]}}), Person.collection_name)
 
 		expect((<any>cat1)._parents.find(p => p._id === person._id)).toBeTruthy()

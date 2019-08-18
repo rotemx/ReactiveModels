@@ -1,4 +1,4 @@
-import {Model} from "../../abstract/Model";
+import {Model} from "../../model/Model";
 
 export function removeDeepRelations<T extends Model<T>>(this: Model<T>, data: Partial<Model<T>>) {
 	const _data = {...data};

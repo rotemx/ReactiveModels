@@ -1,6 +1,6 @@
 //region imports
 import {Class} from "../../types/types/class";
-import {Model} from "../../abstract/Model";
+import {Model} from "../../model/Model";
 //endregion
 
 export const field = (
@@ -14,6 +14,7 @@ export const field = (
 
 	// Log(`Setting key ${key} with type ${Type.name}`);
 	Class.fields = Class.fields || [];
+
 	if (!Class.fields.find(f => f.key === key)) {
 		Class.fields.push({key, type: Type})
 	}

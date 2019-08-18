@@ -2,9 +2,9 @@
   "name": "@rotemx/reactive-models",
   "version": "0.1.0",
   "description": "Reactive Model ORM / Entity Framework for Node.js and MongoDB by rotemx@gmail.com",
-  "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "build": "tsc -p tsconfig.build.json"
   },
   "private": false,
   "repository": {
@@ -26,13 +26,17 @@
     "shortid": "^2.2.14"
   },
   "devDependencies": {
-    "ts-jest": "^24.0.2",
-    "jest-cli": "^24.8.0",
     "@types/fs-extra": "^5.0.4",
     "@types/jest": "^24.0.17",
     "@types/mongodb": "^3.1.31",
     "@types/node": "^10.12.18",
     "jest": "^24.8.0",
-    "typescript": "^3.5.3"
+    "jest-cli": "^24.8.0",
+    "ts-jest": "^24.0.2",
+    "ts-loader": "^6.0.4",
+    "ts-node": "^8.3.0",
+    "typescript": "^3.5.3",
+    "webpack": "^4.39.2",
+    "webpack-cli": "^3.3.7"
   }
 }

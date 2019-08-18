@@ -1,6 +1,6 @@
 //region imports
 import {setHasOnes} from "../decorators/has-one/set-has-ones";
-import {setFields} from "./set-fields";
+import {setFields} from "../decorators/field/set-fields";
 import {IHasOneConfig} from "../types/interfaces/i-has-one-config";
 import {IField} from "../types/interfaces/i-field";
 import {Entity} from "../decorators/entity/entity-decorator";
@@ -12,10 +12,11 @@ import {json} from "../utils/jsonify";
 import {removeDeepRelations} from "../decorators/utils/remove-deep-relations";
 import {IHasManyConfig} from "../types/interfaces/i-has-many-config";
 import {serializeData} from "../db/serialize-data";
-import * as  shortid from 'shortid';
-import moment = require("moment");
-
+import * as shortid from 'shortid';
+// import moment from 'moment';
+//
 export type HasManyInstancesDic = { [key: string]: string[] };
+type HasManyKeys = keyof HasManyInstancesDic;
 export type HasOneInstancesDic = { [key: string]: string };
 
 //endregion
@@ -23,6 +24,7 @@ export type HasOneInstancesDic = { [key: string]: string };
 export type PartialModel = Partial<Model<any>>;
 
 export class Model<T extends Model<T>> {
+
 	static __entity__: boolean;
 	static collection_name: string;
 	static fields: IField[];
@@ -51,7 +53,8 @@ export class Model<T extends Model<T>> {
 		setFields.call(this);
 
 		if (!this._id) {
-			this._id = `${this.Class.name}:${moment().utc().format('DD-MM-YY--HH:mm')}:${shortid.generate()}`;
+			const date = new Date()
+			this._id = `${this.Class.name}${this['name'] || ''}-:${((`${date.getFullYear()}]-${date.getMonth() + 1}-${date.getDay()}--${date.getHours()}:${date.getMinutes()}`))}:${shortid.generate()}`;
 		}
 
 		if (_data) {
@@ -160,7 +163,7 @@ export class Model<T extends Model<T>> {
 	}
 
 	delete = (): Promise<void> => {
-		return Entity.db.delete({_id: this._id}, this.Class.collection_name)
+		return Entity.db.delete<T>({_id: this._id}, this.Class.collection_name)
 			.then(async () => {
 				const parent_models = await this.getParentModels();
 				for (const p of this._parents) {

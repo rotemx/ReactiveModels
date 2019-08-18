@@ -1,5 +1,5 @@
 //region imports
-import {Model} from "../../abstract/Model";
+import {Model} from "../../model/Model";
 import {json} from "../../utils/jsonify";
 import {densifyArray} from "../utils/densifyArray";
 
@@ -10,7 +10,7 @@ const ARRAY_FUNCTIONS = ['push', 'pop', 'shift', 'upshift', 'splice', 'copyWithi
 
 export type AnyFunction = (...args: any[]) => any;
 
-const isIndex = (prop) => !isNaN(+prop);
+const isIndex = (prop:string) => !isNaN(+prop);
 
 export function setHasMany<T extends Model<T>>(this: Model<T>): void {
 	for (const key of Object.keys(this.Class.hasManys || [])) {
@@ -27,9 +27,9 @@ export function setHasMany<T extends Model<T>>(this: Model<T>): void {
 					this._hasManys[key] = (<Model<any>[]>array).map(model => model._id);
 					return this.update({_hasManys: this._hasManys})
 				},
-				handler        = {
+				handler:ProxyHandler<Model<T>[]>        = {
 
-					deleteProperty: (array, index) => {
+					deleteProperty: (array, index:number) => {
 						const value = array[index];
 						if (value && value instanceof Model) {
 							value.removeParent(this, key)
@@ -40,7 +40,7 @@ export function setHasMany<T extends Model<T>>(this: Model<T>): void {
 						return true
 					},
 					get           : (array: Model<T>[], property) => {
-						if (ARRAY_FUNCTIONS.includes(property)) {
+						if (ARRAY_FUNCTIONS.includes(<string>property)) {
 							const original_method: AnyFunction = <any>array[property]
 							return (...args: any[]) => {
 								array.forEach(m => m.removeParent(this, key))
@@ -51,7 +51,7 @@ export function setHasMany<T extends Model<T>>(this: Model<T>): void {
 						}
 						return array[property];
 					},
-					set           : (array, prop: string, value: Model<T> | number, receiver): boolean => {
+					set           : (array, prop: string, value: Model<T> | number, receiver:any): boolean => {
 						if (prop === 'length' && typeof value === "number") {
 							for (let i = value; i < array.length; i++) {
 								(<Model<T>>array[i]).removeParent(this, key)
@@ -84,7 +84,7 @@ export function setHasMany<T extends Model<T>>(this: Model<T>): void {
 			Object.defineProperty(this, key, {
 				enumerable: true,
 				get       : () => proxy,
-				set       : (array: Model<any>[]) => {
+				set       : (array: Model<T>[]) => {
 					if (!Array.isArray(array)) {
 						throw new Error(`HasMany: Value ${json(array)} must be an array.`)
 					}
@@ -98,7 +98,7 @@ export function setHasMany<T extends Model<T>>(this: Model<T>): void {
 
 					array.forEach(child => child.addParent(this, key));
 
-					proxy = new Proxy(array, handler);
+					proxy = new Proxy<Model<T>[]>(array, handler);
 					this.update({_hasManys: this._hasManys})
 				}
 			})

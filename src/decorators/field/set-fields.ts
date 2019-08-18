@@ -1,7 +1,7 @@
 //region imports
-import {Model} from "./Model";
-import {isPrimitive} from "../db/serialize-data";
-import {proxyHandlerFactory} from "../utils/proxy-handler-factory";
+import {Model} from "../../model/Model";
+import {isPrimitive} from "../../db/serialize-data";
+import {proxyHandlerFactory} from "../../utils/proxy-handler-factory";
 
 //endregion
 
@@ -11,8 +11,8 @@ export function setFields(this: Model<any>): void {
 		(() => {
 			let
 				mode: 'primitive' | 'object' = 'primitive',
-				primitive_value,
-				proxy;
+				primitive_value : number | null | undefined | string | boolean,
+				proxy :  ProxyConstructor;
 
 			const current_val = this[key];
 

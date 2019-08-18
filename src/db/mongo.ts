@@ -5,7 +5,7 @@ import {logErr} from "../utils/log-err";
 import {IdbConnector} from "../types/interfaces/idb-connector";
 import {IDBConfig} from "../types/interfaces/idb-config";
 import {serializeData} from "./serialize-data";
-import {Model} from "../abstract/Model";
+import {Model} from "../model/Model";
 import {json} from "../utils/jsonify";
 //endregion
 
@@ -34,7 +34,7 @@ export class Mongo implements IdbConnector {
 			full_url                                      = url || `mongodb://${username}:${pwd}@${hostname}:${port}/?authMechanism=DEFAULT`;
 
 		return MongoClient
-			.connect(full_url, {useNewUrlParser: true})
+			.connect(full_url, {useNewUrlParser: true, useUnifiedTopology: true})
 			.then((client) => {
 				[this.client, this.db] = [client, client.db(db_name)];
 				console.log(`Mongo/init: Connected successfully to mongo DB at ${hostname}`);
@@ -59,7 +59,7 @@ export class Mongo implements IdbConnector {
 			.updateOne(query, {$set: data}, {upsert: true});
 	}
 
-	delete(item, collection_name: string): Promise<any> {
+	delete<T extends Model<T>>(item:Model<T>, collection_name: string): Promise<any> {
 		if (!item) return Promise.reject('Mongo/delete: no item provided.');
 		return this
 			.db
@@ -77,16 +77,11 @@ export class Mongo implements IdbConnector {
 			Log(`db.collection ${collection_name} is undefined!`, 'WTF');
 			return Promise.reject('Mongo/list: no collection name provided.');
 		}
-		try {
-			return (await this
-				.db
-				.collection(collection_name)
-				.find(ids ? {_id: {$in: ids}} : {})
-				.toArray()) || [];
-		} catch (e) {
-			console.error(`mongo:list:error`)
-			console.log(e);
-		}
+		return (await this
+			.db
+			.collection(collection_name)
+			.find(ids ? {_id: {$in: ids}} : {})
+			.toArray()) || [];
 	}
 
 	async delete_db(): Promise<any> {
