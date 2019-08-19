@@ -1,6 +1,6 @@
 {
   "name": "@rotemx/reactive-models",
-  "version": "0.2.15",
+  "version": "0.2.16",
   "description": "Reactive Models ORM / Entity Framework for Node.js and MongoDB by rotemx@gmail.com",
   "scripts": {
     "test": "jest",
