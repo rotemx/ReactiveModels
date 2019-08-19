@@ -1,12 +1,11 @@
-import {Log} from "./log";
 
 function onExit(err) {
 	console.log('[XXX] Reactive Framework Exit', arguments);
 	if (err) {
 
-		Log(err, 'NODE ERROR >>> ', 'ERRORS');
+		console.error(err, 'NODE ERROR >>> ', 'ERRORS');
 	} else {
-		Log('Node process - no error.', 'runner');
+		console.log('Node process - no error.', 'runner');
 	}
 
 	process.exit();
