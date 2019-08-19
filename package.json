@@ -4,7 +4,8 @@
   "description": "Reactive Model ORM / Entity Framework for Node.js and MongoDB by rotemx@gmail.com",
   "scripts": {
     "test": "jest",
-    "build": "rimraf dist && tsc -p tsconfig.build.json"
+    "build": "rimraf dist && tsc -p tsconfig.build.json",
+    "publish": "git commit -am 'before publish' && git push && npm build && npm version patch && npm publish"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
