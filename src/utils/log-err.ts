@@ -1,6 +1,5 @@
-import {Log} from './Log';
 
 export const logErr = (err: Error) => {
-	Log(err);
+	console.error(err);
 	return Promise.reject(err);
 };
