@@ -5,7 +5,7 @@
   "scripts": {
     "test": "jest",
     "build": "rimraf dist && tsc -p tsconfig.build.json",
-    "publish": "git commit -am \"before publish\" && git push && npm run build && npm version patch && npm publish"
+    "publish": "git commit -am \"before publish\" && git push && npm run build && npm version patch && npm publish --allow-same-version"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
