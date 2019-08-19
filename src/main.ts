@@ -34,7 +34,7 @@ export class Person extends Model<Person> {
 
 (async () => {
 	processMgmt();
-	await Entity.init({db_config: {username: MONGO_CONFIG.user, pwd: MONGO_CONFIG.pwd}});
+	// await Entity.init({db_config: {username: MONGO_CONFIG.user, pwd: MONGO_CONFIG.pwd}});
 
 	await Entity.clear_db()
 

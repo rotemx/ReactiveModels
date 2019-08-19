@@ -11,6 +11,9 @@ import {IEntityDecoratorOptions} from "../../types/interfaces/i-entity-decorator
 
 export function Entity<T extends Model<T>>({collection_name}: IEntityDecoratorOptions = {}) {
 	return (Class:Class) => {
+		if (!Entity.__init__){
+			throw new Error(`Please run Entity.init() before using this decorator.`)
+		}
 		Class.collection_name = collection_name || (Class.name);
 		Entity.Classes.push(Class);
 		Class.__entity__ = true;
@@ -28,10 +31,11 @@ export function Entity<T extends Model<T>>({collection_name}: IEntityDecoratorOp
 
 export namespace Entity {
 	export let db: IdbConnector;
-
+	export let __init__:boolean = false;
 	export const
 		Classes: Class[]                               = [],
 		init: (db: IEntityInitOptions) => Promise<any> = async ({db_config}: IEntityInitOptions): Promise<any> => {
+		Entity.__init__ = true
 		console.log('[>] Entity Framework Init Start');
 		const db_instance = db_config.mongo_instance || new Mongo();
 			Entity.db = db_instance;
