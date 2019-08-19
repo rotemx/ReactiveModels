@@ -1,19 +1,10 @@
 //region imports
-import {Reactive} from "../decorators/reactive/reactive-decorator";
 import {Mongo} from "../db/__mock__/mongo";
-import {field} from "../decorators/field/field-decorator";
 import {Model, PartialModel} from "../model/Model";
-import {hasOne} from "../decorators/has-one/has-one-decorator";
-import {hasMany} from "../decorators/has-many/has-many-decorator";
 import Mock = jest.Mock;
+import {field, hasMany, hasOne, Reactive} from "..";
 
 //endregion
-
-@Reactive()
-export class Person extends Model<Person> {
-	@field name: string
-	@field age: number
-}
 
 
 describe('Relations', () => {

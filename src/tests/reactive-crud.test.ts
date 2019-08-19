@@ -1,21 +1,20 @@
 //region imports
-import {Reactive} from "../decorators/reactive/reactive-decorator";
-import {Mongo} from "../db/__mock__/mongo";
-import {field} from "../decorators/field/field-decorator";
-import {Model} from "../model/Model";
+import {Reactive, field, Model} from "..";
 import Mock = jest.Mock;
+import {Mongo} from "../db/__mock__/mongo";
 //endregion
 
 
 describe('Reactive decorator', () => {
 	const mongo = new Mongo();
 
-	beforeAll(async () => {
-	})
-
 	beforeEach(async () => {
 		await Reactive.init({db_config: {username: 'blah', pwd: 'Blah', mongo_instance: mongo}})
 	});
+
+	beforeAll(async () => {
+	})
+
 
 	afterEach(async () => {
 		await Reactive.db.close();
@@ -82,10 +81,10 @@ describe('Reactive decorator', () => {
 			age
 		})
 
-		expect(mongo.upsert).toBeCalledTimes(2)
+		expect(mongo.upsert).toBeCalledTimes(2);
 		expect(person.name).toEqual(name);
-		expect((<Mock>mongo.upsert).mock.calls[1][1].name).toEqual(name)
-		expect((<Mock>mongo.upsert).mock.calls[1][1].age).toEqual(age)
+		expect((<Mock>mongo.upsert).mock.calls[1][1].name).toEqual(name);
+		expect((<Mock>mongo.upsert).mock.calls[1][1].age).toEqual(age);
 	})
 
 });

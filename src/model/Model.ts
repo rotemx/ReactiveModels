@@ -31,7 +31,7 @@ export class Model<T extends Model<T>> {
 	static hasOnes: IHasOneConfig;
 	static hasManys: IHasManyConfig;
 	// static auto_update_DB: boolean = true;
-	protected static instances: Model<any>[] = [];
+	static instances: Model<any>[];
 
 	_hasManys: HasManyInstancesDic = {}
 	_hasOnes: HasOneInstancesDic = {}

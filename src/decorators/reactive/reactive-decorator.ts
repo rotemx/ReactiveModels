@@ -4,8 +4,17 @@ import {IReactiveInitOptions} from "../../types/interfaces/i-reactive-init-optio
 import {Mongo} from "../../db/mongo";
 import {IdbConnector} from "../../types/interfaces/idb-connector";
 import {Class} from "../../types/types/class";
-import {Model} from "../../model/Model";
+import {Model} from "../..";
 import {IReactiveDecoratorOptions} from "../../types/interfaces/i-reactive-decorator-options";
+
+const DEFAULT_REACTIVE_INIT_OPTIONS: IReactiveInitOptions = {
+	db_config: {
+		hostname     : 'localhost',
+		port         : 27017,
+		authenticated: false
+
+	}
+}
 
 //endregion
 
@@ -33,24 +42,24 @@ export namespace Reactive {
 	export let db: IdbConnector;
 	export let __init__: boolean = false;
 	export const
-		Classes: Class[]                                 = [],
-		init: (db: IReactiveInitOptions) => Promise<any> = async ({db_config}: IReactiveInitOptions): Promise<any> => {
+		Classes: Class[]                                  = [],
+		init: (db?: IReactiveInitOptions) => Promise<any> = async ({db_config}: IReactiveInitOptions = DEFAULT_REACTIVE_INIT_OPTIONS): Promise<any> => {
 			Reactive.__init__ = true
-			console.log('[>] Reactive Models Init Start');
+			console.log('[>] Reactive Models Initializing...');
 			const db_instance = db_config.mongo_instance || new Mongo();
 			Reactive.db = db_instance;
 			await db_instance.init(db_config)
 			await Reactive.loadAll()
-			console.log('[] Reactive Models Init End');
+			console.log('[] Reactive Models Initialized.');
 
 		},
-		loadAll: () => Promise<void>                     = async () => {
+		loadAll: () => Promise<void>                      = async () => {
 			Reactive.Classes.forEach(async Class => {
 				await Class.loadAll()
 			})
 		},
 
-		clear_db: () => Promise<void>                    = async () => {
+		clear_db: () => Promise<void>                     = async () => {
 			await Reactive.db.delete_db()
 		};
 
