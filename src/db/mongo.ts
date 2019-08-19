@@ -1,11 +1,9 @@
 //region imports
 import {Db, MongoClient} from 'mongodb';
-import {Log} from "../utils/Log";
 import {logErr} from "../utils/log-err";
 import {IdbConnector} from "../types/interfaces/idb-connector";
 import {IDBConfig} from "../types/interfaces/idb-config";
-import {serializeData} from "./serialize-data";
-import {Model} from "../model/Model";
+import {Model} from "..";
 import {json} from "../utils/jsonify";
 //endregion
 
@@ -16,7 +14,7 @@ const DEFAULT_CONFIG = {
 	master_url   : '',
 	username     : '',
 	pwd          : '',
-	db_name      : 'EntityModel',
+	db_name      : 'ReactiveModels',
 	authenticated: true
 };
 
@@ -59,7 +57,7 @@ export class Mongo implements IdbConnector {
 			.updateOne(query, {$set: data}, {upsert: true});
 	}
 
-	delete<T extends Model<T>>(item:Model<T>, collection_name: string): Promise<any> {
+	delete<T extends Model<T>>(item: Model<T>, collection_name: string): Promise<any> {
 		if (!item) return Promise.reject('Mongo/delete: no item provided.');
 		return this
 			.db
@@ -74,8 +72,8 @@ export class Mongo implements IdbConnector {
 	async list(collection_name: string, ids?: string[]): Promise<Model<any>[]> {
 		if (!collection_name) return Promise.reject('Mongo/list: no collection name provided.');
 		if (!this.db.collection(collection_name)) {
-			Log(`db.collection ${collection_name} is undefined!`, 'WTF');
-			return Promise.reject('Mongo/list: no collection name provided.');
+			console.error(`db.collection ${collection_name} is undefined!`, 'WTF');
+			return Promise.reject('Mongo:list : no collection name provided.');
 		}
 		return (await this
 			.db

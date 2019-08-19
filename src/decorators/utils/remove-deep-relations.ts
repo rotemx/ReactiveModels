@@ -4,8 +4,8 @@ export function removeDeepRelations<T extends Model<T>>(this: Model<T>, data: Pa
 	const _data = {...data};
 
 	[...Object.keys(this._hasManys), ...Object.keys(this._hasOnes)]
-		.filter(key=>_data[key] !== undefined)
-		.map(key=>delete _data[key])
+		.filter(key => _data[key] !== undefined)
+		.map(key => delete _data[key])
 
 	return _data
 }

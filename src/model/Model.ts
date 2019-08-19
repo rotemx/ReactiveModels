@@ -3,7 +3,6 @@ import {setHasOnes} from "../decorators/has-one/set-has-ones";
 import {setFields} from "../decorators/field/set-fields";
 import {IHasOneConfig} from "../types/interfaces/i-has-one-config";
 import {IField} from "../types/interfaces/i-field";
-import {Entity} from "../decorators/entity/entity-decorator";
 import {Class} from "../types/types/class";
 import {ParentModelConfig} from "../types/interfaces/parent-model-config";
 import {setHasMany} from "../decorators/has-many/set-has-many";
@@ -13,6 +12,7 @@ import {removeDeepRelations} from "../decorators/utils/remove-deep-relations";
 import {IHasManyConfig} from "../types/interfaces/i-has-many-config";
 import {serializeData} from "../db/serialize-data";
 import * as shortid from 'shortid';
+import {Reactive} from "..";
 // import moment from 'moment';
 //
 export type HasManyInstancesDic = { [key: string]: string[] };
@@ -25,7 +25,7 @@ export type PartialModel = Partial<Model<any>>;
 
 export class Model<T extends Model<T>> {
 
-	static __entity__: boolean;
+	static __reactive__: boolean;
 	static collection_name: string;
 	static fields: IField[];
 	static hasOnes: IHasOneConfig;
@@ -41,12 +41,12 @@ export class Model<T extends Model<T>> {
 	private auto_update_DB = true;
 
 	constructor(_data?: Partial<T>) {
-		if (!Entity.db) {
-			throw new Error('Entity db not initialized')
+		if (!Reactive.db) {
+			throw new Error('Reactive db not initialized')
 		}
 		this.Class = <typeof Model>(this.constructor);
-		if (!this.Class.__entity__) {
-			throw new Error(`${this.Class.name} is not an Entity. Did you forget to call the Entity() decorator?`)
+		if (!this.Class.__reactive__) {
+			throw new Error(`${this.Class.name} is not a Reactive Model. Did you forget to call the Reactive() decorator?`)
 		}
 		setHasMany.call(this);
 		setHasOnes.call(this);
@@ -92,11 +92,11 @@ export class Model<T extends Model<T>> {
 	};
 
 	static async loadAll<T extends Model<T>>(): Promise<Model<T>[]> {
-		const results = await Entity.db.list(this.collection_name);
+		const results = await Reactive.db.list(this.collection_name);
 		return this.instances = (results)
 			.map(data => {
 				const
-					Class: Class = Entity.Classes
+					Class: Class = Reactive.Classes
 						.find(userClass => userClass.collection_name === this.collection_name);
 				return new Class(data)
 			})
@@ -119,14 +119,16 @@ export class Model<T extends Model<T>> {
 		if (force_update || (!this._is_loading && this.auto_update_DB)) {
 			data = removeDeepRelations.call(this, data)
 			const serialized_data = serializeData({...data});
-			return Entity.db.upsert({_id: this._id}, serialized_data, this.Class.collection_name)
+			return Reactive.db.upsert({_id: this._id}, serialized_data, this.Class.collection_name)
 		}
 	};
+
+	protected _parents: ParentModelConfig[] = new Proxy([], proxyHandlerFactory('_parents', this.update.bind(this)))
 
 	removeParent(parent: Model<T>, key: string): void {
 		let idx = this._parents.findIndex(p => p._id === parent._id);
 		if (idx === -1) {
-			console.warn(`EntityFramework: removeParent: Cannot find ${key} parent _id ${this._id} in child ${this._id} of class ${this.Class.name}, so cannot remove it. Weird. `);
+			console.warn(`ReactiveModels: removeParent: Cannot find ${key} parent _id ${this._id} in child ${this._id} of class ${this.Class.name}, so cannot remove it. Weird. `);
 			return
 		}
 		this._parents.splice(idx, 1)
@@ -135,7 +137,7 @@ export class Model<T extends Model<T>> {
 	addParent(parent: Model<T>, key: string): void {
 		let idx = this._parents.findIndex(p => p._id === this._id);
 		if (idx > -1) {
-			console.warn(`EntityFramework: setParent: Found old ${key} parent _id ${this._id} in child ${this._id} of class ${this.Class.name}. Weird. `);
+			console.warn(`ReactiveModels: setParent: Found old ${key} parent _id ${this._id} in child ${this._id} of class ${this.Class.name}. Weird. `);
 			this._parents.splice(idx, 1)
 		}
 		this._parents.push({
@@ -148,7 +150,7 @@ export class Model<T extends Model<T>> {
 	getParents(): Model<T>[] {
 		return this._parents.map(parent_config => {
 			const
-				parent_Class: Class = Entity.Classes.find(c => c.collection_name === parent_config.collection_name),
+				parent_Class: Class = Reactive.Classes.find(c => c.collection_name === parent_config.collection_name),
 				result              = parent_Class.get<T>(parent_config._id);
 
 			return result.length ? result[0] : null
@@ -156,14 +158,12 @@ export class Model<T extends Model<T>> {
 
 	}
 
-	protected _parents: ParentModelConfig[] = new Proxy([], proxyHandlerFactory('_parents', this.update.bind(this)))
-
 	async getParentModels(): Promise<Model<T>[]> {
 		return this.Class.get<T>(this._parents.map(p => p._id))
 	}
 
 	delete = (): Promise<void> => {
-		return Entity.db.delete<T>({_id: this._id}, this.Class.collection_name)
+		return Reactive.db.delete<T>({_id: this._id}, this.Class.collection_name)
 			.then(async () => {
 				const parent_models = await this.getParentModels();
 				for (const p of this._parents) {
@@ -177,7 +177,7 @@ export class Model<T extends Model<T>> {
 				}
 
 				for (let coll_name of Object.keys(this._hasOnes)) {
-					const child_Class = <Class>Entity.Classes.find(cl => cl.collection_name === coll_name)
+					const child_Class = <Class>Reactive.Classes.find(cl => cl.collection_name === coll_name)
 					if (!child_Class) {
 						throw new Error(`Child Class not found for collection name ${json(coll_name)}`)
 					}

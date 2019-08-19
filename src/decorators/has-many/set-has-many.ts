@@ -10,26 +10,26 @@ const ARRAY_FUNCTIONS = ['push', 'pop', 'shift', 'upshift', 'splice', 'copyWithi
 
 export type AnyFunction = (...args: any[]) => any;
 
-const isIndex = (prop:string) => !isNaN(+prop);
+const isIndex = (prop: string) => !isNaN(+prop);
 
 export function setHasMany<T extends Model<T>>(this: Model<T>): void {
 	for (const key of Object.keys(this.Class.hasManys || [])) {
 		(() => {
 
 			const
-				removeChildren = (array: Model<T>[]) => {
+				removeChildren                    = (array: Model<T>[]) => {
 					array.forEach(model => model.removeParent(this, key));
 				},
-				addChildren    = (array: Model<T>[]) => {
+				addChildren                       = (array: Model<T>[]) => {
 					array.forEach(model => model.addParent(this, key));
 				},
-				updateHasMany  = (array: Model<T>[]) => {
+				updateHasMany                     = (array: Model<T>[]) => {
 					this._hasManys[key] = (<Model<any>[]>array).map(model => model._id);
 					return this.update({_hasManys: this._hasManys})
 				},
-				handler:ProxyHandler<Model<T>[]>        = {
+				handler: ProxyHandler<Model<T>[]> = {
 
-					deleteProperty: (array, index:number) => {
+					deleteProperty: (array, index: number) => {
 						const value = array[index];
 						if (value && value instanceof Model) {
 							value.removeParent(this, key)
@@ -51,7 +51,7 @@ export function setHasMany<T extends Model<T>>(this: Model<T>): void {
 						}
 						return array[property];
 					},
-					set           : (array, prop: string, value: Model<T> | number, receiver:any): boolean => {
+					set           : (array, prop: string, value: Model<T> | number, receiver: any): boolean => {
 						if (prop === 'length' && typeof value === "number") {
 							for (let i = value; i < array.length; i++) {
 								(<Model<T>>array[i]).removeParent(this, key)
@@ -61,8 +61,8 @@ export function setHasMany<T extends Model<T>>(this: Model<T>): void {
 							if (!(value instanceof Model)) {
 								throw new Error(`A hasMany value must be an instance of Model. value received: ${json(value)} `)
 							}
-							if (!value.Class.__entity__) {
-								throw new Error(`Value ${json(value)} of class ${value.Class.name} is not an entity. Did you forget to call the @Entity() decorator?`)
+							if (!value.Class.__reactive__) {
+								throw new Error(`Value ${json(value)} of class ${value.Class.name} is not an ReactiveModels model. Did you forget to call the @Reactive() decorator?`)
 							}
 
 							const old_value = <Model<T>>array[prop];
@@ -88,8 +88,8 @@ export function setHasMany<T extends Model<T>>(this: Model<T>): void {
 					if (!Array.isArray(array)) {
 						throw new Error(`HasMany: Value ${json(array)} must be an array.`)
 					}
-					if (!array.every(model => (model instanceof Model) && model.Class.__entity__)) {
-						throw new Error(`HasMany: Value ${json(array)} contains non-entity values.`)
+					if (!array.every(model => (model instanceof Model) && model.Class.__reactive__)) {
+						throw new Error(`HasMany: Value ${json(array)} contains non-ReactiveModel values.`)
 					}
 
 					this._hasManys[key] = array.map(m => m._id);

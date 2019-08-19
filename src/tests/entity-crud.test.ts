@@ -1,30 +1,29 @@
 //region imports
-import {Entity} from "../decorators/entity/entity-decorator";
+import {Reactive} from "../decorators/reactive/reactive-decorator";
 import {Mongo} from "../db/__mock__/mongo";
 import {field} from "../decorators/field/field-decorator";
 import {Model} from "../model/Model";
-import {Class} from "../types/types/class";
 import Mock = jest.Mock;
 //endregion
 
 
-describe('Entity decorator', () => {
+describe('Reactive decorator', () => {
 	const mongo = new Mongo();
 
 	beforeAll(async () => {
 	})
 
 	beforeEach(async () => {
-		await Entity.init({db_config: {username: 'blah', pwd: 'Blah', mongo_instance: mongo}})
+		await Reactive.init({db_config: {username: 'blah', pwd: 'Blah', mongo_instance: mongo}})
 	});
 
 	afterEach(async () => {
-		await Entity.db.close();
+		await Reactive.db.close();
 	});
 
 
-	test('creating an entity', () => {
-		@Entity()
+	test('creating a model', () => {
+		@Reactive()
 		class Person extends Model<Person> {
 			@field name
 			@field age
@@ -36,8 +35,8 @@ describe('Entity decorator', () => {
 		expect((<Mock>mongo.upsert).mock.calls[0][0]._id).toEqual(person._id)
 	})
 
-	test('deleting an entity', () => {
-		@Entity()
+	test('deleting a model', () => {
+		@Reactive()
 		class Person extends Model<Person> {
 			@field name
 			@field age
@@ -50,7 +49,7 @@ describe('Entity decorator', () => {
 	})
 
 	test('setting a field directly', () => {
-		@Entity()
+		@Reactive()
 		class Person extends Model<Person> {
 			@field name
 			@field age
@@ -67,7 +66,7 @@ describe('Entity decorator', () => {
 	})
 
 	test('setting multiple fields with set() method', () => {
-		@Entity()
+		@Reactive()
 		class Person extends Model<Person> {
 			@field name
 			@field age

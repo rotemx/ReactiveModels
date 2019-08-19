@@ -1,4 +1,4 @@
-type ProxyHandlerFn = (key: string, updateFn: (data: { [key: string]: any }) => void) => { get: (target:{[key:string]:any}, property:string) => any, set: (target:any, property:string, value:any, reciever:any) => any };
+type ProxyHandlerFn = (key: string, updateFn: (data: { [key: string]: any }) => void) => { get: (target: { [key: string]: any }, property: string) => any, set: (target: any, property: string, value: any, reciever: any) => any };
 
 export const proxyHandlerFactory: ProxyHandlerFn =
 	             (key, updateFn) => {

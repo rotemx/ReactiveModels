@@ -1,5 +1,5 @@
 //region imports
-import {Entity} from "../decorators/entity/entity-decorator";
+import {Reactive} from "../decorators/reactive/reactive-decorator";
 import {Mongo} from "../db/__mock__/mongo";
 import {field} from "../decorators/field/field-decorator";
 import {Model, PartialModel} from "../model/Model";
@@ -9,7 +9,7 @@ import Mock = jest.Mock;
 
 //endregion
 
-@Entity()
+@Reactive()
 export class Person extends Model<Person> {
 	@field name: string
 	@field age: number
@@ -23,7 +23,7 @@ describe('Relations', () => {
 		upsert_calls = upsert_mock.mock.calls;
 
 	beforeEach(async () => {
-		await Entity.init({db_config: {username: 'blah', pwd: 'Blah', mongo_instance: mongo}})
+		await Reactive.init({db_config: {username: 'blah', pwd: 'Blah', mongo_instance: mongo}})
 	});
 
 	afterEach(async () => {
@@ -31,7 +31,7 @@ describe('Relations', () => {
 	})
 
 	test('hasOne sanity with same-class child', () => {
-		@Entity()
+		@Reactive()
 		class Person extends Model<Person> {
 			@field name
 			@hasOne child: Person
@@ -66,12 +66,12 @@ describe('Relations', () => {
 
 	test('hasOne sanity with different-class child', () => {
 
-		@Entity()
+		@Reactive()
 		class Dog extends Model<Dog> {
 			@field name: string
 		}
 
-		@Entity()
+		@Reactive()
 		class Person extends Model<Person> {
 			@field name: string
 			@hasOne dog: Dog
@@ -111,12 +111,12 @@ describe('Relations', () => {
 
 
 	test('hasMany sanity', () => {
-		@Entity()
+		@Reactive()
 		class Cat extends Model<Cat> {
 			@field name
 		}
 
-		@Entity()
+		@Reactive()
 		class Person extends Model<Person> {
 			@field name
 			@hasMany cats: Cat[]
@@ -167,7 +167,7 @@ describe('Relations', () => {
 	})
 
 	test('remove hasOne relation', () => {
-		@Entity()
+		@Reactive()
 		class Person extends Model<Person> {
 			@field name
 			@hasOne child: Person
@@ -192,13 +192,13 @@ describe('Relations', () => {
 	})
 
 	test('remove hasMany relation with [] assignments', () => {
-		@Entity()
+		@Reactive()
 		class Cat extends Model<Cat> {
 			@field name
 			// @hasOne person: Person
 		}
 
-		@Entity()
+		@Reactive()
 		class Person extends Model<Person> {
 			@field name
 			@hasMany cats: Cat[]
@@ -219,12 +219,12 @@ describe('Relations', () => {
 	})
 
 	test('remove hasMany relation with pop() or length', () => {
-		@Entity()
+		@Reactive()
 		class Cat extends Model<Cat> {
 			@field name
 		}
 
-		@Entity()
+		@Reactive()
 		class Person extends Model<Person> {
 			@field name
 			@hasMany cats: Cat[]
@@ -246,12 +246,12 @@ describe('Relations', () => {
 	})
 
 	test('remove some hasMany relations from the array with length or splice', () => {
-		@Entity()
+		@Reactive()
 		class Cat extends Model<Cat> {
 			@field name
 		}
 
-		@Entity()
+		@Reactive()
 		class Person extends Model<Person> {
 			@field name
 			@hasMany cats: Cat[]

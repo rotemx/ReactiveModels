@@ -11,8 +11,8 @@ export function setFields(this: Model<any>): void {
 		(() => {
 			let
 				mode: 'primitive' | 'object' = 'primitive',
-				primitive_value : number | null | undefined | string | boolean,
-				proxy :  ProxyConstructor;
+				primitive_value: number | null | undefined | string | boolean,
+				proxy: ProxyConstructor;
 
 			const current_val = this[key];
 

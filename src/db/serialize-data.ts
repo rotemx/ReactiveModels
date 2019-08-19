@@ -6,7 +6,7 @@ import {Model} from "../model/Model";
 const EXCLUDES = ['save', 'insert', 'delete', 'db', 'auto_update_DB', 'collection_name', 'fields', '_is_loading'];
 
 
-export function isPrimitive(test:any): boolean {
+export function isPrimitive(test: any): boolean {
 	return (test !== Object(test));
 }
 

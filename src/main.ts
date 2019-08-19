@@ -1,42 +1,19 @@
 //region imports
 import {processMgmt} from "./utils/process-mgmt";
 import {MONGO_CONFIG} from "./CONFIG";
-import {Entity} from "./decorators/entity/entity-decorator";
+import {Reactive} from "./decorators/reactive/reactive-decorator";
 import {Model} from "./model/Model";
 import {field} from "./decorators/field/field-decorator";
-import {hasOne} from "./decorators/has-one/has-one-decorator";
 import {hasMany} from "./decorators/has-many/has-many-decorator";
 
 //endregion
 
-@Entity()
-export class Dog extends Model<Dog> {
-	@field age: number;
-	@field color: string;
-}
-
-@Entity()
-export class Cat extends Model<Cat> {
-	@field color: string;
-	@field name: string;
-}
-
-@Entity()
-export class Person extends Model<Person> {
-	@field age: number;
-	@field name: string;
-	@hasMany brothers: Person[]
-
-	@hasOne cat: Cat
-	@hasOne dog: Dog
-
-}
 
 (async () => {
 	processMgmt();
-	// await Entity.init({db_config: {username: MONGO_CONFIG.user, pwd: MONGO_CONFIG.pwd}});
+	await Reactive.init({db_config: {username: MONGO_CONFIG.user, pwd: MONGO_CONFIG.pwd}});
 
-	await Entity.clear_db()
+	await Reactive.clear_db()
 
 	/*
 	 let cat = new Cat({
@@ -61,13 +38,13 @@ export class Person extends Model<Person> {
 	 });
 	 */
 
-	@Entity()
+	@Reactive()
 	class Cat extends Model<Cat> {
 		@field name
 	}
 
-	@Entity()
-	class Person extends Model<Person> {
+	@Reactive()
+	class Person2 extends Model<Person2> {
 		@field name
 		@hasMany cats: Cat[]
 	}
@@ -76,7 +53,7 @@ export class Person extends Model<Person> {
 		cat1   = new Cat({name: 'Mitzy'}),
 		cat2   = new Cat({name: 'Mourice'}),
 		cat3   = new Cat({name: 'Phillipe'}),
-		person = new Person({name: 'person', cats: [cat1, cat2, cat3]});
+		person = new Person2({name: 'person', cats: [cat1, cat2, cat3]});
 
 
 	// person.cats[2].name = "Boris"
@@ -95,7 +72,7 @@ export class Person extends Model<Person> {
 
 	// person2.delete();
 
-	Entity.db.close()
+	Reactive.db.close()
 
 })()
 

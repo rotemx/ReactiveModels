@@ -34,8 +34,8 @@ export function setHasOnes(this: Model<any>): void {
 						}
 
 					} else {
-						if (!(child instanceof Class || !(<Model<T>>child).Class.__entity__ )) {
-							throw new Error(`Value ${json(child)} is not an instance of ${Class.name}. Did you forget to call the Entity() decorator?`)
+						if (!(child instanceof Class || !(<Model<T>>child).Class.__reactive__)) {
+							throw new Error(`Value ${json(child)} is not an instance of ${Class.name}. Did you forget to call the Reactive() decorator?`)
 						}
 						this._hasOnes[key] = child._id;
 

@@ -1,7 +1,7 @@
 import {Log} from "./log";
 
 function onExit(err) {
-	console.log('[XXX] Entity Framework Exit', arguments);
+	console.log('[XXX] Reactive Framework Exit', arguments);
 	if (err) {
 
 		Log(err, 'NODE ERROR >>> ', 'ERRORS');

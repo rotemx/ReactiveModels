@@ -12,8 +12,7 @@ export const hasMany = (
 		Class = <Class>base.constructor,
 		Type  = Reflect.getMetadata("design:type", base, key);
 
-	if (Type !== Array)
-	{
+	if (Type !== Array) {
 		throw new Error(`A hasMany type must be an array of Models`)
 	}
 
