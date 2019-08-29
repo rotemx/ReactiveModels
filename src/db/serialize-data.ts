@@ -18,6 +18,7 @@ export const serializeData = <T extends Model<T>>(data: Partial<T>) => {
 		let value = data[key];
 		if (
 			typeof value === 'function' ||
+			value instanceof Map ||
 			EXCLUDES.includes(key) ||
 			typeof data[key] === 'undefined') {
 			continue

@@ -10,7 +10,7 @@ import {serializeRelationData} from "../decorators/utils/serialize-relation-data
 import {IHasManyConfig} from "../decorators/has-many/i-has-many-config";
 import {serializeData} from "../db/serialize-data";
 import * as shortid from 'shortid';
-import {Reactive} from "..";
+import {Entity} from "..";
 import {IModelInternals} from "./types/i-model-internals";
 import {INT} from "./helpers/model-helpers";
 import moment = require("moment");
@@ -36,11 +36,12 @@ export class Model<T extends Model<T>> {
 	_id: string
 	Class: Class;
 	private auto_update_DB = true;
+	values: Map<string, any>;
 
 
 	constructor(_data?: Partial<T>) {
-		if (!Reactive.db) {
-			throw new Error('Reactive db not initialized. Did you forget to run await Reactive.init() ?')
+		if (!Entity.db) {
+			throw new Error('Entity db not initialized. Did you forget to run await Entity.init() ?')
 		}
 		this.Class = <typeof Model>(this.constructor);
 		if (!this.Class.__reactive__) {
@@ -99,11 +100,11 @@ export class Model<T extends Model<T>> {
 	};
 
 	static async loadAll<T extends Model<T>>(): Promise<Model<T>[]> {
-		const results = await Reactive.db.list(this.collection_name);
+		const results = await Entity.db.list(this.collection_name);
 		return this.instances = (results)
 			.map(data => {
 				const
-					Class: Class = Reactive.Classes
+					Class: Class = Entity.Classes
 						.find(userClass => userClass.collection_name === this.collection_name);
 				return new Class(data)
 			})
@@ -126,7 +127,7 @@ export class Model<T extends Model<T>> {
 		if (force_update || (!this._is_loading && this.auto_update_DB)) {
 			data = serializeRelationData.call(this, data)
 			const serialized_data = serializeData({...data});
-			return Reactive.db.upsert({_id: this._id}, serialized_data, this.Class.collection_name)
+			return Entity.db.upsert({_id: this._id}, serialized_data, this.Class.collection_name)
 		}
 	};
 
@@ -157,7 +158,7 @@ export class Model<T extends Model<T>> {
 	}
 
 	delete = (): Promise<void> => {
-		return Reactive.db.delete<T>({_id: this._id}, this.Class.collection_name)
+		return Entity.db.delete<T>({_id: this._id}, this.Class.collection_name)
 			.then(async () => {
 				const parent_models = await this.getParentModels();
 				for (const p of this[INT].parents) {
@@ -171,7 +172,7 @@ export class Model<T extends Model<T>> {
 				}
 
 				for (let coll_name of Object.keys(this[INT].hasOnes)) {
-					const child_Class = <Class>Reactive.Classes.find(cl => cl.collection_name === coll_name)
+					const child_Class = <Class>Entity.Classes.find(cl => cl.collection_name === coll_name)
 					if (!child_Class) {
 						throw new Error(`Child Class not found for collection name ${json(coll_name)}`)
 					}
@@ -188,4 +189,3 @@ export class Model<T extends Model<T>> {
 			})
 	};
 }
-

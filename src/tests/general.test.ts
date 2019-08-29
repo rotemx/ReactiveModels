@@ -1,27 +1,27 @@
 //region imports
-import {field, Model, Reactive} from "..";
+import {field, Model, Entity} from "..";
 import {MONGO_CONFIG} from "../CONFIG";
 
 //endregion
 
 
-describe('Reactive decorator', () => {
+describe('Entity decorator', () => {
 
 
 	beforeEach(async ()=>{
-		await Reactive.init({db_config: {username: MONGO_CONFIG.user, pwd: MONGO_CONFIG.pwd}});
-		await Reactive.clear_db()
+		await Entity.init({db_config: {username: MONGO_CONFIG.user, pwd: MONGO_CONFIG.pwd}});
+		await Entity.clear_db()
 	})
 
-	test('Reactive.init() should load all instances', async () => {
+	test('Entity.init() should load all instances', async () => {
 
-		@Reactive()
+		@Entity()
 		class Person extends Model<Person> {
 			@field name;
 			@field age
 		}
 
-		@Reactive()
+		@Entity()
 		class Cat extends Model<Cat> {
 			@field name;
 		}
@@ -33,11 +33,11 @@ describe('Reactive decorator', () => {
 			cat2    = new Cat();
 
 
-		await Reactive.db.close();
-		await Reactive.init({db_config: {username: MONGO_CONFIG.user, pwd: MONGO_CONFIG.pwd}});
-		expect(Reactive.Classes.find(c => c.collection_name === Person.collection_name).instances.length).toEqual(2)
-		expect(Reactive.Classes.find(c => c.collection_name === Cat.collection_name).instances.length).toEqual(2)
-		await Reactive.db.close();
+		await Entity.db.close();
+		await Entity.init({db_config: {username: MONGO_CONFIG.user, pwd: MONGO_CONFIG.pwd}});
+		expect(Entity.Classes.find(c => c.collection_name === Person.collection_name).instances.length).toEqual(2)
+		expect(Entity.Classes.find(c => c.collection_name === Cat.collection_name).instances.length).toEqual(2)
+		await Entity.db.close();
 
 	})
 
