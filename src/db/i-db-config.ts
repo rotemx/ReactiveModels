@@ -1,6 +1,6 @@
-import {IdbConnector} from "./idb-connector";
+import {IDbConnector} from "./i-db-connector";
 
-export interface IDBConfig {
+export interface IDbConfig {
 	hostname?: string
 	url?: string
 	master_url?: string
@@ -9,5 +9,5 @@ export interface IDBConfig {
 	authenticated?: boolean
 	db_name?: string
 	port?: number
-	mongo_instance?: IdbConnector
+	mongo_instance?: IDbConnector
 }

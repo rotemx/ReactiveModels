@@ -1,8 +1,8 @@
 //region imports
 import {Db, MongoClient} from 'mongodb';
 import {logErr} from "../utils/log-err";
-import {IdbConnector} from "../types/interfaces/idb-connector";
-import {IDBConfig} from "../types/interfaces/idb-config";
+import {IDbConnector} from "./i-db-connector";
+import {IDbConfig} from "./i-db-config";
 import {Model} from "..";
 import {json} from "../utils/jsonify";
 //endregion
@@ -18,13 +18,13 @@ const DEFAULT_CONFIG = {
 	authenticated: true
 };
 
-export class Mongo implements IdbConnector {
+export class Mongo implements IDbConnector {
 	client: MongoClient;
 	private db: Db;
 
-	private config: IDBConfig;
+	private config: IDbConfig;
 
-	init(config: IDBConfig = DEFAULT_CONFIG): Promise<any> {
+	init(config: IDbConfig = DEFAULT_CONFIG): Promise<any> {
 		this.config = {...DEFAULT_CONFIG, ...config};
 
 		const

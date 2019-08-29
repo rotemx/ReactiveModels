@@ -1,7 +1,8 @@
 //region imports
-import {Model} from "../../model/Model";
+import {Model} from "../../model/model";
 import {json} from "../../utils/jsonify";
 import {densifyArray} from "../utils/densifyArray";
+import {INT} from "../../model/helpers/model-helpers";
 
 const ARRAY_FUNCTIONS = ['push', 'pop', 'shift', 'upshift', 'splice', 'copyWithin', 'fill', 'reverse', 'sort']
 
@@ -24,8 +25,10 @@ export function setHasMany<T extends Model<T>>(this: Model<T>): void {
 					array.forEach(model => model.addParent(this, key));
 				},
 				updateHasMany                     = (array: Model<T>[]) => {
-					this._hasManys[key] = (<Model<any>[]>array).map(model => model._id);
-					return this.update({_hasManys: this._hasManys})
+
+					const int = this[INT];
+					int.hasManys[key] = (<Model<any>[]>array).map(model => model._id);
+					return this.update({[INT]:{hasManys: int.hasManys}})
 				},
 				handler: ProxyHandler<Model<T>[]> = {
 
@@ -34,13 +37,13 @@ export function setHasMany<T extends Model<T>>(this: Model<T>): void {
 						if (value && value instanceof Model) {
 							value.removeParent(this, key)
 						}
-						delete array[index]
+						array[index] = undefined;
 						this[key] = densifyArray(array)
 						updateHasMany(this[key])
 						return true
 					},
 					get           : (array: Model<T>[], property) => {
-						if (ARRAY_FUNCTIONS.includes(<string>property)) {
+						if (typeof array[property] === "function" && ARRAY_FUNCTIONS.includes(<string>property)) {
 							const original_method: AnyFunction = <any>array[property]
 							return (...args: any[]) => {
 								array.forEach(m => m.removeParent(this, key))
@@ -92,14 +95,14 @@ export function setHasMany<T extends Model<T>>(this: Model<T>): void {
 						throw new Error(`HasMany: Value ${json(array)} contains non-ReactiveModel values.`)
 					}
 
-					this._hasManys[key] = array.map(m => m._id);
+					this[INT].hasManys[key] = array.map(m => m._id);
 					const old_array = this[key] as Model<any>[];
 					old_array.forEach(model => model.removeParent(this, key))
 
 					array.forEach(child => child.addParent(this, key));
 
 					proxy = new Proxy<Model<T>[]>(array, handler);
-					this.update({_hasManys: this._hasManys})
+					this.update({[INT]: {hasManys: this[INT].hasManys}})
 				}
 			})
 		})();

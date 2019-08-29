@@ -1,10 +1,10 @@
-import {IDBConfig} from "./idb-config";
-import {Model} from "../../model/Model";
+import {IDbConfig} from "./i-db-config";
+import {Model} from "../model/model";
 
 
-export interface IdbConnector {
+export interface IDbConnector {
 
-	init({hostname, url, master_url, username, pwd, db_name, authenticated}: IDBConfig): Promise<any>;
+	init({hostname, url, master_url, username, pwd, db_name, authenticated}: IDbConfig): Promise<any>;
 
 	upsert(query: object, data: object, collection_name: string): Promise<any>;
 

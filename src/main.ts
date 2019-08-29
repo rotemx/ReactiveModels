@@ -2,9 +2,9 @@
 import {processMgmt} from "./utils/process-mgmt";
 import {MONGO_CONFIG} from "./CONFIG";
 import {Reactive} from "./decorators/reactive/reactive-decorator";
-import {Model} from "./model/Model";
+import {Model} from "./model/model";
 import {field} from "./decorators/field/field-decorator";
-import {hasMany} from "./decorators/has-many/has-many-decorator";
+import {hasOne} from "./decorators/has-one/has-one-decorator";
 
 //endregion
 
@@ -15,64 +15,35 @@ import {hasMany} from "./decorators/has-many/has-many-decorator";
 
 	await Reactive.clear_db()
 
-	/*
-	 let cat = new Cat({
-	 color: 'red'
-	 })
-
-
-	 let dog = new Dog({
-	 color: 'White',
-	 age  : 11
-	 })
-
-	 const
-	 meishar = new Person({name: 'Meishar'}),
-	 moti    = new Person({name: 'Moti'}),
-	 rotem   = new Person({
-	 name    : 'Rotem',
-	 age     : 39,
-	 cat,
-	 dog,
-	 brothers: [meishar, moti]  //todo: fix hasOne / _hasManys in ctor data assign
-	 });
-	 */
-
 	@Reactive()
-	class Cat extends Model<Cat> {
-		@field name
-	}
-
-	@Reactive()
-	class Person2 extends Model<Person2> {
-		@field name
-		@hasMany cats: Cat[]
+	class Person extends Model<Person> {
+		@field name;
+		@field details;
+		@hasOne brother: Person
 	}
 
 	const
-		cat1   = new Cat({name: 'Mitzy'}),
-		cat2   = new Cat({name: 'Mourice'}),
-		cat3   = new Cat({name: 'Phillipe'}),
-		person = new Person2({name: 'person', cats: [cat1, cat2, cat3]});
+		person0 = new Person({name: 'brother'}),
+		person1 = new Person({name: 'person1', brother: person0});
 
+	/*		person = new Person({
+	 details:{
+	 address: {
+	 street  : "Byron",
+	 number  : 5,
+	 building:
+	 {
+	 floors    : 4,
+	 apartments: [{owner:'Huhammad', num: 5}, 2, 3, 4, 5, 6]
+	 }
+	 }
+	 },
+	 brother:person0
+	 })*/
+	;
 
-	// person.cats[2].name = "Boris"
-	delete person.cats[2]
-	//    rotem.dog = dog
-
-	// rotem.cats.push(cat, cat2)
-	// await Person.load()
-	// console.log((jsonify((<Person>Person.instances[0]).data)));
-
-	// let person2 = <Person>Person.instances[0];
-	// person2.set({
-	//     name: 'new name',
-	//     age : 23
-	// })
-
-	// person2.delete();
+	// person.details.address.building.floors = 6;
 
 	Reactive.db.close()
 
 })()
-

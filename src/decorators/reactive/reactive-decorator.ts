@@ -1,11 +1,11 @@
 //region imports
 import "reflect-metadata";
-import {IReactiveInitOptions} from "../../types/interfaces/i-reactive-init-options";
+import {IReactiveInitOptions} from "./i-reactive-init-options";
 import {Mongo} from "../../db/mongo";
-import {IdbConnector} from "../../types/interfaces/idb-connector";
-import {Class} from "../../types/types/class";
+import {IDbConnector} from "../../db/i-db-connector";
+import {Class} from "../../model/types/class";
 import {Model} from "../..";
-import {IReactiveDecoratorOptions} from "../../types/interfaces/i-reactive-decorator-options";
+import {IReactiveDecoratorOptions} from "./i-reactive-decorator-options";
 
 const DEFAULT_REACTIVE_INIT_OPTIONS: IReactiveInitOptions = {
 	db_config: {
@@ -23,6 +23,7 @@ export function Reactive<T extends Model<T>>({collection_name}: IReactiveDecorat
 		if (!Reactive.__init__) {
 			throw new Error(`Please run Reactive.init() before using this decorator.`)
 		}
+
 		Class.collection_name = collection_name || (Class.name);
 		Reactive.Classes.push(Class);
 		Class.__reactive__ = true;
@@ -39,7 +40,7 @@ export function Reactive<T extends Model<T>>({collection_name}: IReactiveDecorat
 }
 
 export namespace Reactive {
-	export let db: IdbConnector;
+	export let db: IDbConnector;
 	export let __init__: boolean = false;
 	export const
 		Classes: Class[]                                  = [],

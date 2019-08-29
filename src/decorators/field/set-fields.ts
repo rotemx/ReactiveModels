@@ -1,40 +1,79 @@
 //region imports
-import {Model} from "../../model/Model";
-import {isPrimitive} from "../../db/serialize-data";
-import {proxyHandlerFactory} from "../../utils/proxy-handler-factory";
+
+import {isPrimitive} from "../../utils/is-primitive";
+import {Model} from "../..";
+import {updateFn} from "../../utils/proxy-handler-factory";
+import {IFieldConfig} from "./i-field-config";
+
+const READ_ONLYS = ['prototype']
 
 //endregion
 
+export function setField(root: any, {key}: IFieldConfig, update: updateFn = root.update, value?) {
 
-export function setFields(this: Model<any>): void {
-	for (const {key, type} of this.Class.fields) {
-		(() => {
-			let
-				mode: 'primitive' | 'object' = 'primitive',
-				primitive_value: number | null | undefined | string | boolean,
-				proxy: ProxyConstructor;
+	function proxyFactory(target, key): ProxyConstructor {
+		let proxy: ProxyConstructor;
 
-			const current_val = this[key];
+		return new Proxy(target, {
+			get: (target, property) => {
+				const value = target[property];
+				if (isPrimitive(value) ||
+					READ_ONLYS.includes(<string>property) ||
+					typeof value === "function"
+				) {
+					return value;
+				} else {
+					if (!proxy) {
+						proxy = proxyFactory(target[property], key)
+					}
+					return proxy
+				}
+			},
+			set: (target, property, value, receiver) => {
+				target[property] = value;
+				if (!(Array.isArray(target) && property === 'length')) {
+					update && update({[key]: root[key]})
+				}
+				return true;
+			}
+		})
+	}
 
-			isPrimitive(current_val) ? primitive_value = current_val : proxy = new Proxy(current_val, proxyHandlerFactory(key, this.update))
+	function setDescriptor(root, key: string, _value) {
+		let
+			init: boolean =  _value !== undefined,
+			value: any = _value,
+			proxy: ProxyConstructor;
 
-			Object.defineProperty((this), key, {
+		Object.defineProperty(root, key,
+			{
 				enumerable: true,
 				get       : () => {
-					return mode === "primitive" ? primitive_value : proxy
-				},
-				set       : async (value) => {
-
+					if (!init) return;
 					if (isPrimitive(value)) {
-						primitive_value = value;
-						mode = "primitive"
-					} else {
-						mode = "object"
-						proxy = new Proxy(value, proxyHandlerFactory(key, this.update));
+						proxy = undefined;
+						return value
 					}
-					await this.update({[key]: value})
+					if (!proxy) {
+						proxy = proxyFactory(value, key)
+					}
+					return proxy
+
+				},
+				set       : (new_value) => {
+					init = true;
+					value = new_value;
+					update && update({[key]: new_value})
 				}
-			})
-		})();
+			}
+		)
 	}
+	setDescriptor(root, key, value)
+}
+
+
+export function setFields(this: Model<any>): void {
+	this.Class.fields.forEach(field =>
+		setField(this, field)
+	)
 }

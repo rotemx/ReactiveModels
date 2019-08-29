@@ -1,11 +1,11 @@
 //region imports
-import {Model} from "../../model/Model";
 import {json} from "../../utils/jsonify";
-
+import {INT} from "../../model/helpers/model-helpers";
+import {Model} from "../../model/model";
 //endregion
 
-export function setHasOnes(this: Model<any>): void {
-	for (const key of  Object.keys(this.Class.hasOnes || [])) {
+export function setHasOnes<T extends Model<T>>(this: Model<T>): void {
+	for (const key of Object.keys(this.Class.hasOnes || [])) {
 		(() => {
 			const Class = this.Class.hasOnes[key];
 
@@ -15,8 +15,9 @@ export function setHasOnes(this: Model<any>): void {
 			Object.defineProperty(this, key, {
 				enumerable: true,
 				get       : () => {
-					if (this._hasOnes[key]) {
-						let results = Class.get(this._hasOnes[key]);
+					const int = this[INT];
+					if (int.hasOnes && int.hasOnes[key]) {
+						let results = Class.get(int.hasOnes[key]);
 						if (results.length) {
 							return results[0]
 						} else {
@@ -27,7 +28,7 @@ export function setHasOnes(this: Model<any>): void {
 				},
 				set       : <T extends Model<T>>(child: Model<T>) => {
 					if (!child) {
-						delete this._hasOnes[key]
+						delete this[INT].hasOnes[key]
 						const old_child = this[key];
 						if (old_child && old_child instanceof Model) {
 							old_child.removeParent(this, key)
@@ -37,11 +38,11 @@ export function setHasOnes(this: Model<any>): void {
 						if (!(child instanceof Class || !(<Model<T>>child).Class.__reactive__)) {
 							throw new Error(`Value ${json(child)} is not an instance of ${Class.name}. Did you forget to call the Reactive() decorator?`)
 						}
-						this._hasOnes[key] = child._id;
+						this[INT].hasOnes[key] = child._id;
 
 						child.addParent(this, key)
 					}
-					return this.update({_hasOnes: this._hasOnes})
+					return this.update({[INT]:{hasOnes: this[INT].hasOnes}})
 				}
 			})
 		})();

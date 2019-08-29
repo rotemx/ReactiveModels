@@ -1,8 +1,8 @@
 //region imports
 import {Mongo} from "../db/__mock__/mongo";
-import {Model, PartialModel} from "../model/Model";
 import Mock = jest.Mock;
-import {field, hasMany, hasOne, Reactive} from "..";
+import {field, hasMany, hasOne, Model, Reactive} from "..";
+import {INT, PartialModel} from "../model/helpers/model-helpers";
 
 //endregion
 
@@ -33,10 +33,10 @@ describe('Relations', () => {
 			child  = new Person({name: 'child'}),
 			parent = new Person({name: 'parent', child})
 
-		expect(parent._hasOnes[key] === child._id)
-		expect((<any>child)._parents[0].key === key)
-		expect((<any>child)._parents[0]._id === child._id)
-		expect((<any>child)._parents[0].collection_name === Person.collection_name)
+		expect(parent[INT].hasOnes[key] === child._id)
+		expect(child[INT].parents[0].key === key)
+		expect(child[INT].parents[0]._id === child._id)
+		expect(child[INT].parents[0].collection_name === Person.collection_name)
 
 		expect(parent.child._id === child._id)
 
@@ -74,7 +74,7 @@ describe('Relations', () => {
 			dog    = new Dog({name: 'Sparky',}),
 			person = new Person({name, dog});
 
-		expect(person._hasOnes[key] === dog._id)
+		expect(parent[INT].hasOnes[key] === dog._id)
 		expect(Person.hasOnes[key]).toBeTruthy();
 		expect(Person.hasOnes[key]).toBe(Dog);
 
@@ -122,8 +122,8 @@ describe('Relations', () => {
 		person.cats = [cat1]
 		person.cats.push(cat2)
 
-		expect(person._hasManys[key]).toContain(cat1._id)
-		expect(person._hasManys[key]).toContain(cat2._id)
+		expect(person[INT].hasManys[key]).toContain(cat1._id)
+		expect(person[INT].hasManys[key]).toContain(cat2._id)
 
 		expect(Person.hasManys).toEqual({cats: Array});
 
@@ -172,7 +172,7 @@ describe('Relations', () => {
 		parent[key] = undefined
 
 		expect(parent[key]).toBeNull()
-		expect(parent._hasOnes[key]).toBeUndefined()
+		expect(parent[INT].hasOnes[key]).toBeUndefined()
 		expect((<any>child)._parents.find(p => p._id === child._id)).toBeUndefined()
 
 		expect(upsert_mock).toHaveBeenCalledWith({_id: child._id}, expect.objectContaining({name: 'child'}), Person.collection_name)

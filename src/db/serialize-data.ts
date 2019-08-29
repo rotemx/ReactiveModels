@@ -1,14 +1,12 @@
 //region imports
 import {decycle} from "json-cyclic"
-import {Model} from "../model/Model";
+import {Model} from "../model/model";
+import {isPrimitive} from "../utils/is-primitive";
 //endregion
 
 const EXCLUDES = ['save', 'insert', 'delete', 'db', 'auto_update_DB', 'collection_name', 'fields', '_is_loading'];
 
 
-export function isPrimitive(test: any): boolean {
-	return (test !== Object(test));
-}
 
 export const serializeData = <T extends Model<T>>(data: Partial<T>) => {
 

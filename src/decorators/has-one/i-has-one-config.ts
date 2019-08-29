@@ -1,7 +1,6 @@
 //region imports
-import {Class} from '../types/class';
-import {Model} from "../../model/Model";
-
+import {Class} from '../../model/types/class';
+import {Model} from "../..";
 //endregion
 
 export interface IHasOneConfig<T extends Model<T> = any> {
