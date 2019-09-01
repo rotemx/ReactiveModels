@@ -1,32 +1,38 @@
 //region imports
 import {processMgmt} from "./utils/process-mgmt";
 import {MONGO_CONFIG} from "./CONFIG";
-import {Reactive} from "./decorators/reactive/reactive-decorator";
 import {Model} from "./model/model";
 import {field} from "./decorators/field/field-decorator";
-import {hasOne} from "./decorators/has-one/has-one-decorator";
+import {Entity} from "./decorators/entity/entity-decorator";
+import {hasMany} from "./decorators/has-many/has-many-decorator";
 
 //endregion
 
 
 (async () => {
 	processMgmt();
-	await Reactive.init({db_config: {username: MONGO_CONFIG.user, pwd: MONGO_CONFIG.pwd}});
+	await Entity.init({db_config: {username: MONGO_CONFIG.user, pwd: MONGO_CONFIG.pwd}});
 
-	await Reactive.clear_db()
+	await Entity.clear_db()
 
-	@Reactive()
+	@Entity()
 	class Person extends Model<Person> {
 		@field name;
 		@field details;
-		@hasOne brother: Person
+		@hasMany brothers: Person[]
 	}
 
 	const
-		person0 = new Person({name: 'brother'}),
-		person1 = new Person({name: 'person1', brother: person0});
+		brother1       = new Person({name: 'brother1'}),
+		person_1        = new Person({name: 'person_1', brothers: [brother1]}),
+		brother2 = new Person({name: 'brother2'});
 
-	/*		person = new Person({
+	person_1.brothers.push(brother2)
+
+	person_1.brothers = [brother1]
+
+
+	/*		person_1 = new Person({
 	 details:{
 	 address: {
 	 street  : "Byron",
@@ -38,12 +44,9 @@ import {hasOne} from "./decorators/has-one/has-one-decorator";
 	 }
 	 }
 	 },
-	 brother:person0
+	 brother1:brother1
 	 })*/
-	;
 
-	// person.details.address.building.floors = 6;
-
-	Reactive.db.close()
-
+	// person_1.details.address.building.floors = 6;
+	Entity.db.close()
 })()

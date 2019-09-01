@@ -4,4 +4,4 @@ export const jsonify = (json: object, accuracy = 8) => JSON.stringify(decycle(js
 	return val && val.toFixed ? Number(val.toFixed(accuracy)) : val
 }, 2)
 
-export const json = data => data ? JSON.stringify(decycle(data)) : data
+export const json = data => data ? JSON.stringify(data) : data

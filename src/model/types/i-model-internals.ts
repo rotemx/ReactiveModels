@@ -5,4 +5,5 @@ export interface IModelInternals {
 	hasManys?: HasManyInstancesDic;
 	hasOnes?: HasOneInstancesDic;
 	parents?: IParentModelConfig[]
+	values?: { [key: string]: any }
 }

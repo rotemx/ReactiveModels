@@ -54,7 +54,10 @@ export class Mongo implements IDbConnector {
 		return this
 			.db
 			.collection(collection_name)
-			.updateOne(query, {$set: data}, {upsert: true});
+			.updateOne(query, {$set: data}, {upsert: true})
+			.catch(err=>{
+				console.error('upsert err', err);
+			})
 	}
 
 	delete<T extends Model<T>>(item: Model<T>, collection_name: string): Promise<any> {

@@ -1,44 +1,46 @@
 {
-  "name"           : "@rotemx/reactive-models",
-  "version"        : "0.2.16",
-  "description"    : "Reactive Models ORM / Entity Framework for Node.js and MongoDB by rotemx@gmail.com",
-  "scripts"        : {
-    "test"   : "jest",
-    "build"  : "rimraf dist && tsc -p tsconfig.build.json",
+  "name": "@rotemx/reactive-models",
+  "version": "0.2.16",
+  "description": "Reactive Models ORM / Entity Framework for Node.js and MongoDB by rotemx@gmail.com",
+  "scripts": {
+    "test": "jest",
+    "build": "rimraf dist && tsc -p tsconfig.build.json",
     "publish": "git commit -am \"before publish\" && git push && npm run build && npm version patch && npm publish"
   },
-  "main"           : "dist/index.js",
-  "types"          : "dist/index.d.ts",
-  "private"        : false,
-  "repository"     : {
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "private": false,
+  "repository": {
     "type": "git",
-    "url" : "git+https://github.com/rotemx/ReactiveModels.git"
+    "url": "git+https://github.com/rotemx/ReactiveModels.git"
   },
-  "author"         : "Rotem X. Meiri - rotemx@gmail.com",
-  "license"        : "GNU GPLV3",
-  "bugs"           : {
+  "author": "Rotem X. Meiri - rotemx@gmail.com",
+  "license": "GNU GPLV3",
+  "bugs": {
     "url": "https://github.com/rotemx/ReactiveModels/issues"
   },
-  "homepage"       : "https://github.com/rotemx/ReactiveModels#readme",
-  "dependencies"   : {
-    "fs-extra"        : "^7.0.1",
-    "json-cyclic"     : "0.0.3",
-    "moment"          : "^2.24.0",
-    "mongodb"         : "^3.2.7",
+  "homepage": "https://github.com/rotemx/ReactiveModels#readme",
+  "dependencies": {
+    "@types/lodash": "^4.14.138",
+    "fs-extra": "^7.0.1",
+    "json-cyclic": "0.0.3",
+    "lodash": "^4.17.15",
+    "moment": "^2.24.0",
+    "mongodb": "^3.2.7",
     "reflect-metadata": "^0.1.13",
-    "shortid"         : "^2.2.14"
+    "shortid": "^2.2.14"
   },
   "devDependencies": {
     "@types/fs-extra": "^5.0.4",
-    "@types/jest"    : "^24.0.17",
-    "@types/mongodb" : "^3.1.31",
-    "@types/node"    : "^10.12.18",
-    "jest"           : "^24.8.0",
-    "jest-cli"       : "^24.8.0",
-    "rimraf"         : "^3.0.0",
-    "ts-jest"        : "^24.0.2",
-    "ts-loader"      : "^6.0.4",
-    "ts-node"        : "^8.3.0",
-    "typescript"     : "^3.5.3"
+    "@types/jest": "^24.0.17",
+    "@types/mongodb": "^3.1.31",
+    "@types/node": "^10.12.18",
+    "jest": "^24.8.0",
+    "jest-cli": "^24.8.0",
+    "rimraf": "^3.0.0",
+    "ts-jest": "^24.0.2",
+    "ts-loader": "^6.0.4",
+    "ts-node": "^8.3.0",
+    "typescript": "^3.5.3"
   }
 }

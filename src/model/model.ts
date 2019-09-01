@@ -1,10 +1,7 @@
 //region imports
-import {setHasOnes} from "../decorators/has-one/set-has-ones";
-import {setField, setFields} from "../decorators/field/set-fields";
 import {IHasOneConfig} from "../decorators/has-one/i-has-one-config";
 import {IFieldConfig} from "../decorators/field/i-field-config";
 import {Class} from "./types/class";
-import {setHasMany} from "../decorators/has-many/set-has-many";
 import {json} from "../utils/jsonify";
 import {serializeRelationData} from "../decorators/utils/serialize-relation-data";
 import {IHasManyConfig} from "../decorators/has-many/i-has-many-config";
@@ -12,7 +9,9 @@ import {serializeData} from "../db/serialize-data";
 import * as shortid from 'shortid';
 import {Entity} from "..";
 import {IModelInternals} from "./types/i-model-internals";
+import {serializeInternals} from "./helpers/serialize-internals";
 import {INT} from "./helpers/model-helpers";
+import {isEqual} from 'lodash'
 import moment = require("moment");
 
 //endregion
@@ -26,17 +25,22 @@ export class Model<T extends Model<T>> {
 	static hasManys: IHasManyConfig;
 	static instances: Model<any>[];
 
-	protected updateINT() {
-		this.update({_internals: this[INT]})
+	updateInternals(prop: keyof IModelInternals) {
+		let data = this[INT][prop];
+		this.update({[`__${prop}__`]: data})
 	}
 
-	[INT]: IModelInternals = {};
+	[INT]: IModelInternals = {
+		values  : {},
+		parents : [],
+		hasManys: {},
+		hasOnes : {}
+	};
 
 	_is_loading = true;
 	_id: string
 	Class: Class;
 	private auto_update_DB = true;
-	values: Map<string, any>;
 
 
 	constructor(_data?: Partial<T>) {
@@ -48,25 +52,27 @@ export class Model<T extends Model<T>> {
 			throw new Error(`${this.Class.name} is not a Reactive Model. Did you forget to call the @Reactive() decorator?`)
 		}
 
-		setField(this[INT], {key: 'hasManys', type: Object}, this.updateINT.bind(this), {})
-		setField(this[INT], {key: 'hasOnes', type: Object}, this.updateINT.bind(this), {})
-		setField(this[INT], {key: 'parents', type: Array}, this.updateINT.bind(this), [])
-
-		setHasMany.call(this);
-		setHasOnes.call(this);
-		setFields.call(this);
-
+		// const Int = this[INT];
+		// setField(Int, {key: 'hasManys', type: Object}, this.updateInternals.bind(this, "hasManys"), {})
+		// setField(Int, {key: 'hasOnes', type: Object}, this.updateInternals.bind(this, "hasOnes"), {})
+		// setField(Int, {key: 'parents', type: Array}, this.updateInternals.bind(this, "parents"), [])
 
 		if (!this._id) {
-			this._id = `${this.Class.name}${this['name'] || ''}-:${moment().utc().format('DD-MM-YY--HH:mm')}:${shortid.generate()}`;
+			const now = moment().utc().format('DD-MM-YY--HH:mm');
+			this._id = `${this.Class.name}-${this['name'] || _data['name'] || ''}-${shortid.generate()}`;
 		}
 
 		if (_data) {
-			if (_data['_internals']) {
-				this[INT] = _data['_internals']
-				_data['_internals'] = undefined;
-			}
-			this.set(<T>_data, false)
+			const internals_props: (keyof IModelInternals)[] = ['hasManys', 'hasOnes', 'parents'];
+
+			internals_props.forEach(prop => {
+				if (_data[`__${prop}__`]) {
+					this[INT][prop] = _data[`__${prop}__`]
+					_data[`__${prop}__`] = undefined
+				}
+			})
+
+			this.set(_data, false)
 		}
 
 		this.Class.instances = this.Class.instances || [];
@@ -120,10 +126,10 @@ export class Model<T extends Model<T>> {
 	}
 
 	save = (): Promise<any> => {
-		return this.update({...this, _internals: this[INT]}, true)
+		return this.update({...this, ...serializeInternals(this)}, true)
 	};
 
-	update = async (data: Partial<Model<T> & { _internals?: IModelInternals }>, force_update = false): Promise<any> => {
+	update = async (data: Partial<Model<T>>, force_update = false): Promise<any> => {
 		if (force_update || (!this._is_loading && this.auto_update_DB)) {
 			data = serializeRelationData.call(this, data)
 			const serialized_data = serializeData({...data});
@@ -132,25 +138,37 @@ export class Model<T extends Model<T>> {
 	};
 
 	removeParent(parent: Model<T>, key: string): void {
-		let idx = this[INT].parents.findIndex(p => p._id === parent._id);
+		const
+			parents = this[INT].parents,
+			idx     = parents.findIndex(p => p._id === parent._id);
+
 		if (idx === -1) {
-			console.warn(`ReactiveModels: removeParent: Cannot find ${key} parent _id ${this._id} in child ${this._id} of class ${this.Class.name}, so cannot remove it. Weird. `);
-			return
+			return console.warn(`ReactiveModels: removeParent: Cannot find ${key} parent _id ${this._id} in child ${this._id} of class ${this.Class.name}, so couldn't remove it. Weird stuff. `);
 		}
-		this[INT].parents.splice(idx, 1)
+		parents.splice(idx, 1)
+		this.updateInternals("parents")
 	}
 
 	addParent(parent: Model<T>, key: string): void {
-		let idx = this[INT].parents.findIndex(p => p._id === this._id);
-		if (idx > -1) {
-			console.warn(`ReactiveModels: setParent: Found old ${key} parent _id ${this._id} in child ${this._id} of class ${this.Class.name}. Weird. `);
-			this[INT].parents.splice(idx, 1)
+		const
+			Internals: IModelInternals = this[INT],
+			idx                        = Internals.parents.findIndex(p => p._id === parent._id),
+			found                      = Internals.parents[idx];
+
+		if (isEqual(found, parent)) {
+			console.log(`addParent: it's the same parent!`, found._id);
+			return
 		}
-		this[INT].parents.push({
+		if (found) {
+			console.warn(`ReactiveModels: addParent: Found old ${key} parent _id ${this._id} in child ${this._id} of class ${this.Class.name}. Weird stuff. `);
+			Internals.parents.splice(idx, 1)
+		}
+		Internals.parents.push({
 			_id            : parent._id,
 			key,
 			collection_name: parent.Class.collection_name
 		})
+		this.updateInternals("parents")
 	}
 
 	async getParentModels(): Promise<Model<T>[]> {
