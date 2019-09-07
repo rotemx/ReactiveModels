@@ -1,50 +1,60 @@
 //region imports
-import {json} from "../../utils/jsonify";
-import {INT} from "../../model/helpers/model-helpers";
+import {FIELDS} from "../../model/helpers/model-helpers";
+import {Class} from "../../model/types/class";
+import {IFieldMap} from "../../model/types/i-field-map";
 import {Model} from "../../model/model";
+import {json} from "../../utils/jsonify";
+import {Entity} from "../..";
+
 //endregion
 
-export function setHasOnes<T extends Model<T>>(this: Model<T>): void {
-	for (const key of Object.keys(this.Class.hasOnes || [])) {
-		(() => {
-			const Class = this.Class.hasOnes[key];
 
-			if (!(Class instanceof (Model.constructor))) {
-				throw new Error(`Type of hasOne property "${key}" in class "${this.Class.name}" is not an instance of Model. Did you forget to specify the type ?`)
+function setHasOne(Class: Class, key: string) {
+	Object.defineProperty(Class.prototype, key, {
+		enumerable: true,
+		get       : function (this: Model): Model | null {
+			const fieldMap: IFieldMap = this[FIELDS];
+			if (fieldMap[key]) {
+				return Entity.find(<string>fieldMap[key].value, this.Class.hasOnes[key].collection_name)
 			}
-			Object.defineProperty(this, key, {
-				enumerable: true,
-				get       : () => {
-					const int = this[INT];
-					if (int.hasOnes && int.hasOnes[key]) {
-						let results = Class.get(int.hasOnes[key]);
-						if (results.length) {
-							return results[0]
-						} else {
-							throw new Error(`hasOne model with key ${key} is not found on class ${Class.name}`)
-						}
-					}
-					return null
-				},
-				set       : <T extends Model<T>>(child: Model<T>) => {
-					if (!child) {
-						delete this[INT].hasOnes[key]
-						const old_child = this[key];
-						if (old_child && old_child instanceof Model) {
-							old_child.removeParent(this, key)
-						}
+			return null
+		},
+		set       : function (this: Model, model: Model | string) {
+			const
+				fields: IFieldMap = this[FIELDS],
+				old_child: Model  = this[key];
 
-					} else {
-						if (!(child instanceof Class || !(<Model<T>>child).Class.__reactive__)) {
-							throw new Error(`Value ${json(child)} is not an instance of ${Class.name}. Did you forget to call the Reactive() decorator?`)
-						}
-						this[INT].hasOnes[key] = child._id;
+			if (old_child && old_child instanceof Model) {
+				old_child.removeParent(this, key)
+			}
 
-						child.addParent(this, key)
-					}
-					return this.update({[INT]:{hasOnes: this[INT].hasOnes}})
+			if (!model) {
+				return delete fields[key]
+			}
+			if (model instanceof Model) {
+				if (!(model.Class && model.Class.__reactive__)) {
+					throw new Error(`Value ${json(model)} is not an instance of ${Class.name}. Did you forget to call the @Reactive() decorator on the model's class definition?`)
 				}
-			})
-		})();
+
+				if (old_child && old_child._id === model._id) {
+					return console.log(`It's the same child model with _id ${model._id} `);
+				}
+
+				fields[key] = {
+					value : model._id,
+					hasOne: true,
+					proxy : null,
+					init  : true
+				};
+				this.update(key)
+				model.addParent(this, key)
+			}
+		}
+	})
+}
+
+export function setHasOnes(this: void, Class: Class): void {
+	for (const key in Class.hasOnes || {}) {
+		setHasOne(Class, key)
 	}
 }

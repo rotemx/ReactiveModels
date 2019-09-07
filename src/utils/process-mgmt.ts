@@ -1,11 +1,10 @@
 
 function onExit(err) {
-	console.log('[XXX] Entity Framework Exit', arguments);
+	// console.log('[XXX] Entity Framework Exit', arguments);
 	if (err) {
-
 		console.error(err, 'NODE ERROR >>> ', 'ERRORS');
 	} else {
-		console.log('Node process - no error.', 'runner');
+		// console.log('Node process - no error.', 'runner');
 	}
 
 	process.exit();

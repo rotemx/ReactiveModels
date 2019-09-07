@@ -23,7 +23,7 @@ describe('Entity decorator', () => {
 
 	test('creating a model', () => {
 		@Entity()
-		class Person extends Model<Person> {
+		class Person extends Model {
 			@field name
 			@field age
 		}
@@ -31,12 +31,12 @@ describe('Entity decorator', () => {
 		let person = new Person();
 		expect(mongo.upsert).toBeCalledTimes(1)
 		expect(person._id).toBeTruthy();
-		expect((<Mock>mongo.upsert).mock.calls[0][0]._id).toEqual(person._id)
+		expect((<Mock>mongo.upsert).mock.calls[0][0].ids).toEqual(person._id)
 	})
 
 	test('deleting a model', () => {
 		@Entity()
-		class Person extends Model<Person> {
+		class Person extends Model {
 			@field name
 			@field age
 		}
@@ -44,12 +44,12 @@ describe('Entity decorator', () => {
 		let person = new Person();
 		person.delete()
 		expect(mongo.delete).toBeCalledTimes(1)
-		expect((<Mock>mongo.delete).mock.calls[0][0]._id).toEqual(person._id)
+		expect((<Mock>mongo.delete).mock.calls[0][0].ids).toEqual(person._id)
 	})
 
 	test('setting a field directly', () => {
 		@Entity()
-		class Person extends Model<Person> {
+		class Person extends Model {
 			@field name
 			@field age
 		}
@@ -66,7 +66,7 @@ describe('Entity decorator', () => {
 
 	test('setting multiple fields with set() method', () => {
 		@Entity()
-		class Person extends Model<Person> {
+		class Person extends Model {
 			@field name
 			@field age
 		}

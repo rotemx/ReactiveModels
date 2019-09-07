@@ -12,7 +12,7 @@ export interface IDbConnector {
 
 	close(): Promise<void>;
 
-	list(collection_name: string, ids?: string[]): Promise<Model<any>[]>;
+	list(collection_name: string, ids?: string[]): Promise<Model[]>;
 
 	delete_db(): Promise<any>;
 

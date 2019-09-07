@@ -4,7 +4,7 @@ import {Model} from "../../model/model";
 //endregion
 
 export const hasOne = (
-	base: Model<any>,
+	base: Model,
 	key: string
 ): void => {
 	const

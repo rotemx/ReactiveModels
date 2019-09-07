@@ -5,48 +5,89 @@ import {Model} from "./model/model";
 import {field} from "./decorators/field/field-decorator";
 import {Entity} from "./decorators/entity/entity-decorator";
 import {hasMany} from "./decorators/has-many/has-many-decorator";
+import {hasOne} from "./decorators/has-one/has-one-decorator";
 
 //endregion
 
 
 (async () => {
 	processMgmt();
-	await Entity.init({db_config: {username: MONGO_CONFIG.user, pwd: MONGO_CONFIG.pwd}});
 
+	await Entity.init({db_config: {username: MONGO_CONFIG.user, pwd: MONGO_CONFIG.pwd}});
 	await Entity.clear_db()
 
+
 	@Entity()
-	class Person extends Model<Person> {
+	class Cattttt extends Model {
 		@field name;
-		@field details;
-		@hasMany brothers: Person[]
 	}
 
-	const
-		brother1       = new Person({name: 'brother1'}),
-		person_1        = new Person({name: 'person_1', brothers: [brother1]}),
-		brother2 = new Person({name: 'brother2'});
+	@Entity()
+	class Person extends Model {
+		@field name: string;
+		@field age;
+		@field details: { more?: string, address: { street: { apps: any[], number: number, name: string } } };
+		@hasOne brother: Person
+		@hasMany cats: Cattttt[]
+	}
 
-	person_1.brothers.push(brother2)
+	let rotemx = new Person({
+		name   : "Rotem",
+		details: {
 
-	person_1.brothers = [brother1]
+			address: {
+				street: {
+					name  : "Byron",
+					number: 5,
+					apps  : [1, 3, 4, 5, 6, 7, 8, 9, 10]
+				},
+			}
+		}
+	})
 
 
-	/*		person_1 = new Person({
-	 details:{
-	 address: {
-	 street  : "Byron",
-	 number  : 5,
-	 building:
-	 {
-	 floors    : 4,
-	 apartments: [{owner:'Huhammad', num: 5}, 2, 3, 4, 5, 6]
+	let meishar = new Person({name: "Meishar"})
+
+	let
+		mitzy = new Cattttt({name:"Mitzy"}),
+		mitzy2 = new Cattttt({name:"Mitzy2"})
+	// rotemx.brother = meishar;
+	rotemx.cats = [mitzy]
+
+	rotemx.cats.push(mitzy2)
+	delete rotemx.cats[0]
+
+	// rotemx.details.address.street.number = 6
+
+	// rotemx.details.address.street.apps.push(20);
+	// rotemx.details.more = "blah"
+	// delete  rotemx.details.more;
+	// console.log((<Person>Person.instances[0]).brother);
+
+
+	/*
+
+
+	 const
+	 // rotemx = new Person({age:39});
+	 cat = new Cattttt({name:"Flurry"}),
+	 brother = new Person({name: 'brother'}),
+	 rotemx       = new Person({name: 'rotemx', brother, cats:[cat]});
+
+
+	 rotemx.details = {
+	 hello : {
+	 hello: 'world'
 	 }
 	 }
-	 },
-	 brother1:brother1
-	 })*/
 
-	// person_1.details.address.building.floors = 6;
-	Entity.db.close()
+	 rotemx.details.hello.hello = ["class"]
+
+	 rotemx.details.hello.hello.push('BLAH')
+	 rotemx.details.hello.hello.pop()
+
+	 rotemx.age = 34;
+	 console.log(rotemx.data);
+	 */
+	await Entity.db.close()
 })()

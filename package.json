@@ -28,6 +28,7 @@
     "moment": "^2.24.0",
     "mongodb": "^3.2.7",
     "reflect-metadata": "^0.1.13",
+    "saslprep": "^1.0.3",
     "shortid": "^2.2.14"
   },
   "devDependencies": {

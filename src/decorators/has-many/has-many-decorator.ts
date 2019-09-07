@@ -4,7 +4,7 @@ import {Model} from "../../model/model";
 //endregion
 
 export const hasMany = (
-	base: Model<any>,
+	base: Model,
 	key: string
 ): any => {
 
@@ -18,6 +18,6 @@ export const hasMany = (
 
 	console.log(`Setting HasMany key ${key} with type ${Type.name}`);
 	Class.hasManys = Class.hasManys || {};
-	Class.hasManys[key] = Type
+	Class.hasManys[key] = {Class:null}
 }
 

@@ -4,7 +4,7 @@ import {Model} from "../../model/model";
 //endregion
 
 export const field = (
-	base: Model<any>,
+	base: Model,
 	key: string
 ): void => {
 
@@ -13,7 +13,5 @@ export const field = (
 		Type  = Reflect.getMetadata("design:type", base, key);
 
 	console.log(`Setting key ${key} with type ${Type.name}`);
-	Class.fields = Class.fields || [];
-
-	Class.fields.push({key, type: Type})
+	Class.fields = [...(Class.fields || []), {key, type: Type}];
 }

@@ -2,7 +2,7 @@
 import {Mongo} from "../db/__mock__/mongo";
 import Mock = jest.Mock;
 import {field, hasMany, hasOne, Model, Entity} from "..";
-import {INT, PartialModel} from "../model/helpers/model-helpers";
+import {FIELDS, PartialModel} from "../model/helpers/model-helpers";
 
 //endregion
 
@@ -23,7 +23,7 @@ describe('Relations', () => {
 
 	test('hasOne sanity with same-class child', () => {
 		@Entity()
-		class Person extends Model<Person> {
+		class Person extends Model {
 			@field name
 			@hasOne child: Person
 		}
@@ -33,19 +33,19 @@ describe('Relations', () => {
 			child  = new Person({name: 'child'}),
 			parent = new Person({name: 'parent', child})
 
-		expect(parent[INT].hasOnes[key] === child._id)
-		expect(child[INT].parents[0].key === key)
-		expect(child[INT].parents[0]._id === child._id)
-		expect(child[INT].parents[0].collection_name === Person.collection_name)
+		expect(parent[FIELDS].hasOnes[key]._id === child._id)
+		expect(child[FIELDS].parents[0].key === key)
+		expect(child[FIELDS].parents[0]._id === child._id)
+		expect(child[FIELDS].parents[0].collection_name === Person.collection_name)
 
 		expect(parent.child._id === child._id)
 
 		expect(upsert_mock).toHaveBeenCalledWith({_id: child._id}, expect.objectContaining({name: 'child'}), Person.collection_name)
 		expect(upsert_mock).toHaveBeenCalledWith({_id: parent._id}, expect.objectContaining({name: 'parent'}), Person.collection_name)
 
-		expect(upsert_mock).toHaveBeenCalledWith({_id: parent._id}, expect.objectContaining(<Partial<Model<Person>>>{_hasOnes: {[key]: child._id}}), Person.collection_name)
+		expect(upsert_mock).toHaveBeenCalledWith({_id: parent._id}, expect.objectContaining(<Partial<Model>>{_hasOnes: {[key]: child._id}}), Person.collection_name)
 
-		expect(upsert_mock).toHaveBeenCalledWith({_id: child._id}, expect.objectContaining(<Partial<Model<Person>>>{
+		expect(upsert_mock).toHaveBeenCalledWith({_id: child._id}, expect.objectContaining(<Partial<Model>>{
 			_parents: [{
 				_id            : parent._id,
 				collection_name: Person.collection_name,
@@ -58,12 +58,12 @@ describe('Relations', () => {
 	test('hasOne sanity with different-class child', () => {
 
 		@Entity()
-		class Dog extends Model<Dog> {
+		class Dog extends Model {
 			@field name: string
 		}
 
 		@Entity()
-		class Person extends Model<Person> {
+		class Person extends Model {
 			@field name: string
 			@hasOne dog: Dog
 		}
@@ -74,7 +74,7 @@ describe('Relations', () => {
 			dog    = new Dog({name: 'Sparky',}),
 			person = new Person({name, dog});
 
-		expect(parent[INT].hasOnes[key] === dog._id)
+		expect(parent[FIELDS].hasOnes[key] === dog._id)
 		expect(Person.hasOnes[key]).toBeTruthy();
 		expect(Person.hasOnes[key]).toBe(Dog);
 
@@ -88,8 +88,8 @@ describe('Relations', () => {
 		expect(upsert_mock).toHaveBeenCalledWith({_id: person._id}, expect.objectContaining({name: 'John'}), Person.collection_name)
 		expect(upsert_mock).toHaveBeenCalledWith({_id: dog._id}, expect.objectContaining({name: 'Sparky'}), Dog.collection_name)
 
-		expect(upsert_mock).toHaveBeenCalledWith({_id: person._id}, expect.objectContaining(<Partial<Model<Person>>>{_hasOnes: {[key]: dog._id}}), Person.collection_name)
-		expect(upsert_mock).toHaveBeenCalledWith({_id: dog._id}, <Partial<Model<Dog>>>{
+		expect(upsert_mock).toHaveBeenCalledWith({_id: person._id}, expect.objectContaining(<Partial<Model>>{_hasOnes: {[key]: dog._id}}), Person.collection_name)
+		expect(upsert_mock).toHaveBeenCalledWith({_id: dog._id}, <Partial<Model>>{
 			_parents: [
 				{
 					_id            : person._id,
@@ -103,12 +103,12 @@ describe('Relations', () => {
 
 	test('hasMany sanity', () => {
 		@Entity()
-		class Cat extends Model<Cat> {
+		class Cat extends Model {
 			@field name
 		}
 
 		@Entity()
-		class Person extends Model<Person> {
+		class Person extends Model {
 			@field name
 			@hasMany cats: Cat[]
 		}
@@ -122,8 +122,8 @@ describe('Relations', () => {
 		person.cats = [cat1]
 		person.cats.push(cat2)
 
-		expect(person[INT].hasManys[key]).toContain(cat1._id)
-		expect(person[INT].hasManys[key]).toContain(cat2._id)
+		expect(person[FIELDS].hasManys[key]).toContain(cat1._id)
+		expect(person[FIELDS].hasManys[key]).toContain(cat2._id)
 
 		expect(Person.hasManys).toEqual({cats: Array});
 
@@ -146,8 +146,8 @@ describe('Relations', () => {
 		expect(upsert_mock).toHaveBeenCalledWith({_id: cat2._id}, expect.objectContaining({name: 'Skinny'}), Cat.collection_name)
 		expect(upsert_mock).toHaveBeenCalledWith({_id: person._id}, expect.objectContaining({name: 'John'}), Person.collection_name)
 
-		expect(upsert_mock).toHaveBeenCalledWith({_id: person._id}, expect.objectContaining(<Partial<Model<Person>>>{_hasManys: {cats: [cat1._id, cat2._id]}}), Person.collection_name)
-		expect(upsert_mock).toHaveBeenCalledWith({_id: cat1._id}, expect.objectContaining(<Partial<Model<Cat>>>{
+		expect(upsert_mock).toHaveBeenCalledWith({_id: person._id}, expect.objectContaining(<Partial<Model>>{_hasManys: {cats: [cat1._id, cat2._id]}}), Person.collection_name)
+		expect(upsert_mock).toHaveBeenCalledWith({_id: cat1._id}, expect.objectContaining(<Partial<Model>>{
 			_parents: [{
 				_id            : person._id,
 				collection_name: Person.collection_name,
@@ -159,7 +159,7 @@ describe('Relations', () => {
 
 	test('remove hasOne relation', () => {
 		@Entity()
-		class Person extends Model<Person> {
+		class Person extends Model {
 			@field name
 			@hasOne child: Person
 		}
@@ -172,7 +172,7 @@ describe('Relations', () => {
 		parent[key] = undefined
 
 		expect(parent[key]).toBeNull()
-		expect(parent[INT].hasOnes[key]).toBeUndefined()
+		expect(parent[FIELDS].hasOnes[key]).toBeUndefined()
 		expect((<any>child)._parents.find(p => p._id === child._id)).toBeUndefined()
 
 		expect(upsert_mock).toHaveBeenCalledWith({_id: child._id}, expect.objectContaining({name: 'child'}), Person.collection_name)
@@ -184,13 +184,13 @@ describe('Relations', () => {
 
 	test('remove hasMany relation with [] assignments', () => {
 		@Entity()
-		class Cat extends Model<Cat> {
+		class Cat extends Model {
 			@field name
 			// @hasOne person: Person
 		}
 
 		@Entity()
-		class Person extends Model<Person> {
+		class Person extends Model {
 			@field name
 			@hasMany cats: Cat[]
 		}
@@ -211,12 +211,12 @@ describe('Relations', () => {
 
 	test('remove hasMany relation with pop() or length', () => {
 		@Entity()
-		class Cat extends Model<Cat> {
+		class Cat extends Model {
 			@field name
 		}
 
 		@Entity()
-		class Person extends Model<Person> {
+		class Person extends Model {
 			@field name
 			@hasMany cats: Cat[]
 		}
@@ -238,12 +238,12 @@ describe('Relations', () => {
 
 	test('remove some hasMany relations from the array with length or splice', () => {
 		@Entity()
-		class Cat extends Model<Cat> {
+		class Cat extends Model {
 			@field name
 		}
 
 		@Entity()
-		class Person extends Model<Person> {
+		class Person extends Model {
 			@field name
 			@hasMany cats: Cat[]
 		}

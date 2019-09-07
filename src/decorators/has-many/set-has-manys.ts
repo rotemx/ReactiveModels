@@ -1,138 +1,155 @@
 //region imports
 import {json} from "../../utils/jsonify";
-import {INT} from "../../model/helpers/model-helpers";
+import {FIELDS, THIS} from "../../model/helpers/model-helpers";
 import {Class} from "../../model/types/class";
-import {IModelInternals} from "../../model/types/i-model-internals";
+import {IFieldInstance, IFieldMap, Primitive} from "../../model/types/i-field-map";
 import {Model} from "../../model/model";
-import {AnyFunction, ARRAY_FUNCTIONS, ArrayMethod, isIndex} from "./helpers";
+import {AnyFunction, ArrayMethod, isIndex, MUTATING_ARRAY_FUNCTIONS} from "./helpers";
+
 //endregion
 
-export const ROOT = Symbol('root')
 
-class RootedModelArray<T extends Model<T> = any> extends Array<Model<T>> {
-	[ROOT]?: Model<T>
+export interface RootedModelArray extends Array<Model> {
+	[THIS]?: Model
 }
 
-
-function setHasMany<T extends Model<T>>(UserClass: Class, key: string) {
+function setHasMany(UserClass: Class, key: string) {
 
 	const
-		removeParents                     = (array: RootedModelArray) => {
-			array.forEach(m => m.removeParent(array[ROOT], key));
-		},
-		addParents                        = (array: RootedModelArray) => {
-			array.forEach(model => model.addParent(array[ROOT], key));
-		},
-		updateHasMany                     = (array: RootedModelArray) => {
-			const
-				root                       = array[ROOT],
-				Internals: IModelInternals = root[INT];
+		updateFieldMap                 = (array: RootedModelArray) => {
+			const This = array[THIS];
+			const fields: IFieldMap = This[FIELDS];
 
-			Internals.hasManys[key] = array.map(m => m._id);
-			root.updateInternals("hasManys")
+			fields[key] = {
+				hasMany: true,
+				value  : <Primitive>array.map(m => m._id),
+				proxy  : new Proxy<Model[]>(array, handler),
+				init   : true
+			};
+			This.update(key)
 		},
-		syncParents                       = (old_array: RootedModelArray, new_array: RootedModelArray) => {
+		syncParents                    = function (this: void, old_array: RootedModelArray, new_array: RootedModelArray) {
 			old_array.forEach(m => {
 				if (!new_array.includes(m)) {
-					m.removeParent(new_array[ROOT], key)
+					m.removeParent(new_array[THIS], key)
 				}
 			})
 			new_array.forEach(m => {
 				if (!old_array.includes(m)) {
-					m.addParent(new_array[ROOT], key)
+					m.addParent(new_array[THIS], key)
 				}
 			})
 		},
-		handler: ProxyHandler<Model<T>[]> = {
-
+		handler: ProxyHandler<Model[]> = {
 			deleteProperty: (array, index: number) => {
 				const
 					value = array[index];
 
 				if (value && value instanceof Model) {
-					value.removeParent(array[ROOT], key)
+					value.removeParent(array[THIS], key)
 				}
 				array.splice(index, 1)
 				return true
 			},
-			get           : function (new_array: RootedModelArray, property) {
+			get           : (new_array: Model[], property) => {
 				if (typeof new_array[property] === "function" &&
-					ARRAY_FUNCTIONS.includes(<ArrayMethod>property)) {
+					MUTATING_ARRAY_FUNCTIONS.includes(<ArrayMethod>property)) {
 
 					const original_method: AnyFunction = <any>new_array[property]
 					return (...args: any[]) => {
 						const old_array = [...new_array];
 						original_method.apply(new_array, args)
-						updateHasMany(new_array)
-
+						updateFieldMap(new_array)
 						syncParents(old_array, new_array)
 					}
 				}
 				return new_array[property];
 			},
-			set           : (array: RootedModelArray, prop: string | number | symbol, value: Model<T> | number, receiver: any): boolean => {
-				const root: Model<T> = array[ROOT];
+			set           : (array: RootedModelArray, prop: string | number | symbol, child: Model | number, receiver: any): boolean => {
 
-				if (prop === 'length' && typeof value === "number") {
-					for (let i = value; i < array.length; i++) {
-						array[i].removeParent(root, key)
+				if (prop === 'length' && typeof child === "number") {
+					for (let i = child; i < array.length; i++) {
+						array[i].removeParent(array[THIS], key)
 					}
-				} else if (typeof prop === "symbol") {
-
-				} else if (isIndex(prop)) {
-					if (!(value instanceof Model)) {
-						throw new Error(`A hasMany value must be an instance of Entity. value received: ${json(value)} `)
+				}
+				else if (typeof prop === "symbol") {
+					//do nothing
+				}
+				else if (isIndex(prop)) {
+					if (!(child instanceof Model)) {
+						throw new Error(`@hasMany: @hasMany value must be an instance of Entity. Value received: ${json(child)} `)
 					}
-					if (!value.Class.__reactive__) {
-						throw new Error(`Value ${json(value)} of class ${value.Class.name} is not an Entity. Did you forget to call the @Entity() decorator?`)
-					}
-
-					const old_value: Model<T> = array[prop];
-					if (old_value) {
-						old_value.removeParent(root, key)
+					if (!child.Class.__reactive__) {
+						throw new Error(`@hasMany: Value ${json(child)} of class ${(child && child.Class && child.Class.name || 'Unknown')} is not an Entity. Did you forget to call the @Entity() decorator?`)
 					}
 
-					value.addParent(root, key)
-				} else {
+					const old_child = array[prop];
+					if (old_child) {
+						old_child.removeParent(this, key)
+					}
+
+					if (this.Class.hasManys[key] && this.Class.hasManys[key].Class) {
+						if (!([...array, child]).every(m => m.Class === this.Class.hasManys[key])) {
+							throw new Error(`@hasMany: the child provided has a class of ${child.Class.name} whereas other members are of class ${this.Class.hasManys[key].name}`)
+						}
+					}
+					else {
+						this.Class.hasManys[key] = {Class: child.Class}
+					}
+
+					child.addParent(array[THIS], key)
+				}
+				else {
 					throw new Error(`${String(prop)} is not an index.`)
 				}
-				array[prop] = value
-				updateHasMany(array)
+				array[prop] = child
+				updateFieldMap(array)
 				return true;
 			}
 		}
 
-
 	Object.defineProperty(UserClass.prototype, key, {
 		enumerable: true,
-		get       : function () {
-			return this[INT].values[key]
+		get       : function (this: Model) {  //Descriptor
+			const field: IFieldInstance = this[FIELDS][key];
+			if (!field) return
+
+			if (!field.proxy) {
+				const
+					ids_array   = <string[]>field.value,
+					child_Class = this.Class.hasManys[key].Class;
+
+				const target: RootedModelArray = ids_array.map(child_Class.get);
+
+				target[THIS] = this;
+				field.proxy = new Proxy<Model[]>(target, handler)
+				return field.proxy
+			}
+			return field.proxy
 		},
-		set       : function (new_array: Model<T>[]) {
+		set       : function (this: Model, new_array: Model[]) {  //Descriptor
 			if (!Array.isArray(new_array)) {
-				throw new Error(`HasMany: Value ${json(new_array)} is not an array.`)
-			}
-			if (!new_array.every(model => (model instanceof Model) && model.Class.__reactive__)) {
-				throw new Error(`HasMany: Value ${json(new_array)} contains non-ReactiveModel values.`)
+				throw new Error(`@hasMany: Value ${json(new_array)} is not an array.`)
 			}
 
-			const
-				Internals: IModelInternals  = this[INT],
-				old_array: RootedModelArray = [...(this[key] || [])];
+			if (!new_array.every(m => (m instanceof Model) && m.Class.__reactive__)) {
+				throw new Error(`@hasMany: Value ${json(new_array)} contains non-@entity values.`)
+			}
+			else if (new_array.length) {
+				this.Class.hasManys[key] = {Class: new_array[0].Class}
+			}
 
-			new_array[ROOT] = this;
-			old_array[ROOT] = this;
-			updateHasMany(new_array)
-			Internals.values[key] = new Proxy<RootedModelArray>(new_array, handler);
-
+			const old_array: Model[] = [...(this[key] || [])];
+			new_array[THIS] = this;
+			updateFieldMap(new_array)
 			syncParents(old_array, new_array)
 		}
 	})
 }
 
 
-export function setHasManys<T extends Model<T>>(UserClass: Class): void {
-	Object
-		.keys(UserClass.hasManys)
-		.forEach(key => setHasMany(UserClass, key))
+export function setHasManys<T extends Model>(this: void, Class: Class): void {
+	for (const key in Class.hasManys || {}) {
+		setHasMany(Class, key)
+	}
 }

@@ -1,79 +1,111 @@
 //region imports
 
 import {isPrimitive} from "../../utils/is-primitive";
-import {Model} from "../..";
-import {updateFn} from "../../utils/proxy-handler-factory";
 import {IFieldConfig} from "./i-field-config";
+import {Class} from "../../model/types/class";
+import {FIELDS, THIS} from "../../model/helpers/model-helpers";
+import {IFieldInstance, IFieldMap} from "../../model/types/i-field-map";
+import {Model} from "../..";
+import {ArrayMethod, MUTATING_ARRAY_FUNCTIONS} from "../has-many/helpers";
+import {cloneDeep, isEqual} from 'lodash'
 
 const READ_ONLYS = ['prototype']
 
 //endregion
 
-export function setField(root: any, {key}: IFieldConfig, update: updateFn = root.update, value?) {
+function setField(Class: Class, {key}: IFieldConfig) {
 
-	function proxyFactory(target, key): ProxyConstructor {
+	const proxyFactory = (target, key): ProxyConstructor => {
 		let proxy: ProxyConstructor;
 
 		return new Proxy(target, {
-			get: (target, property) => {
+			get           : (target, property) => {
 				const value = target[property];
-				if (isPrimitive(value) ||
-					READ_ONLYS.includes(<string>property) ||
-					typeof value === "function"
-				) {
+				if (isPrimitive(value) || READ_ONLYS.includes(<string>property)) {
 					return value;
-				} else {
-					if (!proxy) {
-						proxy = proxyFactory(target[property], key)
-					}
-					return proxy
 				}
+
+				if (Array.isArray(target) &&
+					typeof value === "function" &&
+					MUTATING_ARRAY_FUNCTIONS.includes(<ArrayMethod>property)
+				) {
+					console.log(`> Called array-mutating function ${<string>property}`);
+					return (...args: any[]) => {
+						const old_value = cloneDeep(target);
+						value.apply(target, args);
+						if (!isEqual(old_value, target)) {
+							target[THIS].update(key)
+						}
+					}
+				}
+
+				if (!proxy) {
+					target[property][THIS] = target[THIS]
+					proxy = proxyFactory(target[property], key)
+				}
+				return proxy
 			},
-			set: (target, property, value, receiver) => {
-				target[property] = value;
-				if (!(Array.isArray(target) && property === 'length')) {
-					update && update({[key]: root[key]})
+			set           : (target, property, value, receiver) => {
+				const old_value = target[property];
+				if (!isEqual(value, old_value)) {
+					target[property] = value;
+					target[THIS].update(key)
 				}
 				return true;
-			}
+			},
+			deleteProperty: (target, index: number) => {
+				delete target[index]
+				target[THIS].update(key)
+				return true
+			},
 		})
 	}
 
-	function setDescriptor(root, key: string, _value) {
-		let
-			init: boolean =  _value !== undefined,
-			value: any = _value,
-			proxy: ProxyConstructor;
+	Object.defineProperty(Class.prototype, key,
+		{
+			enumerable: true,
+			get       : function (this: Model) {  //Descriptor
+				const
+					field: IFieldInstance = this[FIELDS][key],
+					value                 = field && field.value;
 
-		Object.defineProperty(root, key,
-			{
-				enumerable: true,
-				get       : () => {
-					if (!init) return;
-					if (isPrimitive(value)) {
-						proxy = undefined;
-						return value
-					}
-					if (!proxy) {
-						proxy = proxyFactory(value, key)
-					}
-					return proxy
+				if (!field || !field.init) return;
 
-				},
-				set       : (new_value) => {
-					init = true;
-					value = new_value;
-					update && update({[key]: new_value})
+				if (isPrimitive(value)) {
+					return value
 				}
+				if (!field.proxy) {
+					value[THIS] = this;
+					field.proxy = proxyFactory(value, key);
+				}
+				return field.proxy
+			},
+			set       : function (this: Model, new_value) { //Descriptor
+				const fields: IFieldMap = this[FIELDS];
+
+				if (isPrimitive(new_value)) {
+					fields[key] = {
+						value: new_value,
+						proxy: null,
+						init : true
+					}
+				}
+				else {
+					new_value[THIS] = this;
+					fields[key] = {
+						value: null,
+						proxy: proxyFactory(new_value, key),
+						init : true
+					}
+				}
+				this.update(key)
 			}
-		)
-	}
-	setDescriptor(root, key, value)
+		}
+	)
 }
 
-
-export function setFields(this: Model<any>): void {
-	this.Class.fields.forEach(field =>
-		setField(this, field)
-	)
+export function setFields(Class: Class): void {
+	for (const field of Class.fields) {
+		setField(Class, field)
+	}
 }

@@ -1,18 +1,18 @@
 //region imports
 import {Model} from "../model";
-import {IModelInternals} from "../types/i-model-internals";
-import {INT} from "./model-helpers";
+import {IFieldMap} from "../types/i-field-map";
+import {FIELDS} from "./model-helpers";
 //endregion
 
-type InternalKey = keyof IModelInternals;
+type InternalKey = keyof IFieldMap;
 type InternalsDict = { [key in InternalKey]?: any };
 
-const EXCLUDED: (InternalKey)[] = ['values']
+const EXCLUDED: (InternalKey)[] = ['fields']
 
-export function serializeInternals(model: Model<any>): InternalsDict {
+export function serializeInternals(model: Model): InternalsDict {
 	const
-		data: InternalsDict        = {},
-		Internals: IModelInternals = model[INT];
+		data: InternalsDict  = {},
+		Internals: IFieldMap = model[FIELDS];
 
 	Object.keys(Internals)
 		.filter(key => !EXCLUDED.includes(<InternalKey>key))

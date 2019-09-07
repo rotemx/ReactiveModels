@@ -1,8 +1,8 @@
 import {Model} from "../model";
 
-export type HasManyInstancesDic = { [key: string]: string[] };
-export type HasOneInstancesDic = { [key: string]: string };
-export type PartialModel = Partial<Model<any>>;
 
+export type PartialModel = Partial<Model>;
 
-export const INT = Symbol('INT');
+export const FIELDS = Symbol('FIELDS');
+export const PARENTS = Symbol('PARENTS');
+export const THIS = Symbol('THIS');

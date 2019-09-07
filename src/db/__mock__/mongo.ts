@@ -13,7 +13,8 @@ export class Mongo implements IDbConnector {
 	init: ({hostname, url, master_url, username, pwd, db_name, authenticated}: IDbConfig) => Promise<any> = jest.fn(promiseFn)
 	list: (collection: string) => Promise<any> = jest.fn(async () => [])
 	upsert: (query, data, collection_name: string) => Promise<any> = jest.fn(async (query, data, collection_name) => {
-		console.log(`MOCK upsert => \n query ${json(query)}\n data: ${json(serializeData(data))}.`);
+		// @ts-ignore
+		console.log(`MOCK upsert => \n query ${json(query)}\n data: ${json(serializeData.call(data))}.`);
 		return promiseFn
 	});
 	delete_db: () => Promise<any> = jest.fn(promiseFn)

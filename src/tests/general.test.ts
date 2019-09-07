@@ -16,13 +16,13 @@ describe('Entity decorator', () => {
 	test('Entity.init() should load all instances', async () => {
 
 		@Entity()
-		class Person extends Model<Person> {
+		class Person extends Model {
 			@field name;
 			@field age
 		}
 
 		@Entity()
-		class Cat extends Model<Cat> {
+		class Cat extends Model {
 			@field name;
 		}
 

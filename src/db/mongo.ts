@@ -44,7 +44,7 @@ export class Mongo implements IDbConnector {
 			});
 	}
 
-	upsert<T extends Model<T>>(query: { _id: string, [prop: string]: any }, data: Partial<T>, collection_name: string): Promise<any> {
+	upsert<T extends Model>(query: { _id: string, [prop: string]: any }, data: object, collection_name: string): Promise<any> {
 		if (!query || !collection_name) return Promise.reject('Mongo/update: no item provided.');
 		if (!query._id) {
 			throw new Error('_id was not specified in upsert')
@@ -60,7 +60,7 @@ export class Mongo implements IDbConnector {
 			})
 	}
 
-	delete<T extends Model<T>>(item: Model<T>, collection_name: string): Promise<any> {
+	delete<T extends Model>(item: Model, collection_name: string): Promise<any> {
 		if (!item) return Promise.reject('Mongo/delete: no item provided.');
 		return this
 			.db
@@ -72,7 +72,7 @@ export class Mongo implements IDbConnector {
 		this.client && this.client.close();
 	}
 
-	async list(collection_name: string, ids?: string[]): Promise<Model<any>[]> {
+	async list(collection_name: string, ids?: string[]): Promise<Model[]> {
 		if (!collection_name) return Promise.reject('Mongo/list: no collection name provided.');
 		if (!this.db.collection(collection_name)) {
 			console.error(`db.collection ${collection_name} is undefined!`, 'WTF');
