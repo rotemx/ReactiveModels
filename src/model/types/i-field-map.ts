@@ -7,7 +7,7 @@ export interface IFieldInstance {
 	proxy: ProxyConstructor | Model[];
 	hasOne?: boolean;
 	hasMany?: boolean;
-	init : boolean;
+	mode : 'primitive' | 'proxy' | 'entity' | null;
 }
 
 export interface IFieldMap {

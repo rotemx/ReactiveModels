@@ -1,4 +1,5 @@
 import {IDbConnector} from "./i-db-connector";
+import {MongoClient}  from "mongodb";
 
 export interface IDbConfig {
 	hostname?: string
@@ -9,5 +10,6 @@ export interface IDbConfig {
 	authenticated?: boolean
 	db_name?: string
 	port?: number
-	mongo_instance?: IDbConnector
+	mongo_instance?: IDbConnector,
+	mongo_client? : MongoClient
 }

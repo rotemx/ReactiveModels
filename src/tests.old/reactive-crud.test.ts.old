@@ -1,7 +1,7 @@
 //region imports
 import {Entity, field, Model} from "..";
 import Mock = jest.Mock;
-import {Mongo} from "../db/__mock__/mongo";
+import {Mongo}                from "../db/__mock__/mongo.ts.old";
 //endregion
 
 

@@ -1,6 +1,6 @@
 //region imports
 import {json} from "../../utils/jsonify";
-import {FIELDS, THIS} from "../../model/helpers/model-helpers";
+import {FIELDS, REACTIVE, THIS} from "../../model/helpers/model-helpers";
 import {Class} from "../../model/types/class";
 import {IFieldInstance, IFieldMap, Primitive} from "../../model/types/i-field-map";
 import {Model} from "../../model/model";
@@ -24,7 +24,7 @@ function setHasMany(UserClass: Class, key: string) {
 				hasMany: true,
 				value  : <Primitive>array.map(m => m._id),
 				proxy  : new Proxy<Model[]>(array, handler),
-				init   : true
+				mode   : "proxy"
 			};
 			This.update(key)
 		},
@@ -79,7 +79,7 @@ function setHasMany(UserClass: Class, key: string) {
 					if (!(child instanceof Model)) {
 						throw new Error(`@hasMany: @hasMany value must be an instance of Entity. Value received: ${json(child)} `)
 					}
-					if (!child.Class.__reactive__) {
+					if (!child.Class[REACTIVE]) {
 						throw new Error(`@hasMany: Value ${json(child)} of class ${(child && child.Class && child.Class.name || 'Unknown')} is not an Entity. Did you forget to call the @Entity() decorator?`)
 					}
 
@@ -132,7 +132,7 @@ function setHasMany(UserClass: Class, key: string) {
 				throw new Error(`@hasMany: Value ${json(new_array)} is not an array.`)
 			}
 
-			if (!new_array.every(m => (m instanceof Model) && m.Class.__reactive__)) {
+			if (!new_array.every(m => (m instanceof Model) && m.Class[REACTIVE])) {
 				throw new Error(`@hasMany: Value ${json(new_array)} contains non-@entity values.`)
 			}
 			else if (new_array.length) {

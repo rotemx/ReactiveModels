@@ -1,8 +1,8 @@
 //region imports
-import {Mongo} from "../db/__mock__/mongo";
+import {Mongo}                                 from "../db/__mock__/mongo.ts.old";
 import Mock = jest.Mock;
 import {field, hasMany, hasOne, Model, Entity} from "..";
-import {FIELDS, PartialModel} from "../model/helpers/model-helpers";
+import {FIELDS, PartialModel}                  from "../model/helpers/model-helpers";
 
 //endregion
 

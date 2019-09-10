@@ -1,10 +1,9 @@
 //region imports
 import {Db, MongoClient} from 'mongodb';
-import {logErr} from "../utils/log-err";
-import {IDbConnector} from "./i-db-connector";
-import {IDbConfig} from "./i-db-config";
-import {Model} from "..";
-import {json} from "../utils/jsonify";
+import {IDbConnector}    from "./i-db-connector";
+import {IDbConfig}       from "./i-db-config";
+import {Model}           from "..";
+import {json}            from "../utils/jsonify";
 //endregion
 
 const DEFAULT_CONFIG = {
@@ -20,46 +19,41 @@ const DEFAULT_CONFIG = {
 
 export class Mongo implements IDbConnector {
 	client: MongoClient;
-	private db: Db;
-
+	db: Db;
+	
 	private config: IDbConfig;
-
-	init(config: IDbConfig = DEFAULT_CONFIG): Promise<any> {
+	
+	async init(config: IDbConfig = DEFAULT_CONFIG): Promise<any> {
 		this.config = {...DEFAULT_CONFIG, ...config};
-
+		
 		const
 			{url, username, hostname, port, pwd, db_name} = this.config,
-			full_url                                      = url || `mongodb://${username}:${pwd}@${hostname}:${port}/?authMechanism=DEFAULT`;
-
-		return MongoClient
-			.connect(full_url, {useNewUrlParser: true, useUnifiedTopology: true})
-			.then((client) => {
-				[this.client, this.db] = [client, client.db(db_name)];
-				console.log(`Mongo/init: Connected successfully to mongo DB at ${hostname}`);
-				return Promise.resolve(this)
-			})
-			.catch(err => {
-				logErr(err);
-				return Promise.reject(err);
-			});
+			full_url                                      = url || `mongodb://${username && pwd ? `${username}:${pwd}@` : ''}${hostname}:${port}/?authMechanism=DEFAULT`;
+		
+		this.client = config.mongo_client || await MongoClient.connect(full_url, {
+			useNewUrlParser   : true,
+			useUnifiedTopology: true
+		})
+		this.db = this.client.db(db_name);
+		console.log(`Mongo/init: Connected successfully to mongo DB at ${hostname}:${port} `);
 	}
-
+	
 	upsert<T extends Model>(query: { _id: string, [prop: string]: any }, data: object, collection_name: string): Promise<any> {
 		if (!query || !collection_name) return Promise.reject('Mongo/update: no item provided.');
 		if (!query._id) {
 			throw new Error('_id was not specified in upsert')
 		}
 		console.log(`> Upserting \t\t ${collection_name} \t\t ${query._id} \t \t ${json(data)} \t\t`);
-
+		
 		return this
 			.db
 			.collection(collection_name)
 			.updateOne(query, {$set: data}, {upsert: true})
-			.catch(err=>{
+			.catch(err => {
 				console.error('upsert err', err);
 			})
 	}
-
+	
 	delete<T extends Model>(item: Model, collection_name: string): Promise<any> {
 		if (!item) return Promise.reject('Mongo/delete: no item provided.');
 		return this
@@ -67,11 +61,11 @@ export class Mongo implements IDbConnector {
 			.collection(collection_name)
 			.deleteOne({_id: item._id});
 	}
-
+	
 	async close() {
 		this.client && this.client.close();
 	}
-
+	
 	async list(collection_name: string, ids?: string[]): Promise<Model[]> {
 		if (!collection_name) return Promise.reject('Mongo/list: no collection name provided.');
 		if (!this.db.collection(collection_name)) {
@@ -84,8 +78,16 @@ export class Mongo implements IDbConnector {
 			.find(ids ? {_id: {$in: ids}} : {})
 			.toArray()) || [];
 	}
-
+	
 	async delete_db(): Promise<any> {
 		return this.db.dropDatabase()
+	}
+	
+	async list_collections(): Promise<string[]> {
+		return (await this
+			.db
+			.listCollections({}, {nameOnly: true})
+			.toArray())
+			.map(coll => coll.name)
 	}
 }

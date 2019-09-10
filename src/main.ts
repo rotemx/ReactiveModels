@@ -14,7 +14,7 @@ import {hasOne} from "./decorators/has-one/has-one-decorator";
 	processMgmt();
 
 	await Entity.init({db_config: {username: MONGO_CONFIG.user, pwd: MONGO_CONFIG.pwd}});
-	await Entity.clear_db()
+	// await Entity.clear_db()
 
 
 	@Entity()
@@ -25,69 +25,21 @@ import {hasOne} from "./decorators/has-one/has-one-decorator";
 	@Entity()
 	class Person extends Model {
 		@field name: string;
-		@field age;
+		@field age:number;
 		@field details: { more?: string, address: { street: { apps: any[], number: number, name: string } } };
 		@hasOne brother: Person
 		@hasMany cats: Cattttt[]
 	}
 
-	let rotemx = new Person({
-		name   : "Rotem",
-		details: {
-
-			address: {
-				street: {
-					name  : "Byron",
-					number: 5,
-					apps  : [1, 3, 4, 5, 6, 7, 8, 9, 10]
-				},
-			}
-		}
-	})
+	// let tidhar = new Person({
+	// 	name: "Tidhar",
+	// 	details : {address: {street: {name: 'Ben Yuhuda', number: 3, apps: [2323, 34, 4,]}}}
+	// })
 
 
-	let meishar = new Person({name: "Meishar"})
-
-	let
-		mitzy = new Cattttt({name:"Mitzy"}),
-		mitzy2 = new Cattttt({name:"Mitzy2"})
-	// rotemx.brother = meishar;
-	rotemx.cats = [mitzy]
-
-	rotemx.cats.push(mitzy2)
-	delete rotemx.cats[0]
-
-	// rotemx.details.address.street.number = 6
-
-	// rotemx.details.address.street.apps.push(20);
-	// rotemx.details.more = "blah"
-	// delete  rotemx.details.more;
-	// console.log((<Person>Person.instances[0]).brother);
+	// tidhar.details.address.street.apps.push(2)
+	// tidhar.details.address.street.apps.splice(2,3)
 
 
-	/*
-
-
-	 const
-	 // rotemx = new Person({age:39});
-	 cat = new Cattttt({name:"Flurry"}),
-	 brother = new Person({name: 'brother'}),
-	 rotemx       = new Person({name: 'rotemx', brother, cats:[cat]});
-
-
-	 rotemx.details = {
-	 hello : {
-	 hello: 'world'
-	 }
-	 }
-
-	 rotemx.details.hello.hello = ["class"]
-
-	 rotemx.details.hello.hello.push('BLAH')
-	 rotemx.details.hello.hello.pop()
-
-	 rotemx.age = 34;
-	 console.log(rotemx.data);
-	 */
-	await Entity.db.close()
+	await Entity.db_connector.close()
 })()

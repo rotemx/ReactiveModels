@@ -1,5 +1,5 @@
 //region imports
-import {FIELDS} from "../../model/helpers/model-helpers";
+import {FIELDS, REACTIVE} from "../../model/helpers/model-helpers";
 import {Class} from "../../model/types/class";
 import {IFieldMap} from "../../model/types/i-field-map";
 import {Model} from "../../model/model";
@@ -32,7 +32,7 @@ function setHasOne(Class: Class, key: string) {
 				return delete fields[key]
 			}
 			if (model instanceof Model) {
-				if (!(model.Class && model.Class.__reactive__)) {
+				if (!(model.Class && model.Class[REACTIVE])) {
 					throw new Error(`Value ${json(model)} is not an instance of ${Class.name}. Did you forget to call the @Reactive() decorator on the model's class definition?`)
 				}
 
@@ -44,7 +44,7 @@ function setHasOne(Class: Class, key: string) {
 					value : model._id,
 					hasOne: true,
 					proxy : null,
-					init  : true
+					mode  : "entity"
 				};
 				this.update(key)
 				model.addParent(this, key)

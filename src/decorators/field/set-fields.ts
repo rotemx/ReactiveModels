@@ -1,5 +1,4 @@
 //region imports
-
 import {isPrimitive} from "../../utils/is-primitive";
 import {IFieldConfig} from "./i-field-config";
 import {Class} from "../../model/types/class";
@@ -69,9 +68,9 @@ function setField(Class: Class, {key}: IFieldConfig) {
 					field: IFieldInstance = this[FIELDS][key],
 					value                 = field && field.value;
 
-				if (!field || !field.init) return;
+				if (!field || !field.mode) return;
 
-				if (isPrimitive(value)) {
+				if (field.mode === 'primitive') {
 					return value
 				}
 				if (!field.proxy) {
@@ -87,7 +86,7 @@ function setField(Class: Class, {key}: IFieldConfig) {
 					fields[key] = {
 						value: new_value,
 						proxy: null,
-						init : true
+						mode : "primitive"
 					}
 				}
 				else {
@@ -95,7 +94,7 @@ function setField(Class: Class, {key}: IFieldConfig) {
 					fields[key] = {
 						value: null,
 						proxy: proxyFactory(new_value, key),
-						init : true
+						mode : "proxy"
 					}
 				}
 				this.update(key)
