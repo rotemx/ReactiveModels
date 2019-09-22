@@ -51,10 +51,10 @@ module.exports = {
   // Force coverage collection from ignored files using an array of glob patterns
   // forceCoverageMatch: [],
 
-  // A path to a module which exports an async function that is triggered once before all test suites
+  // A path to a module which exports an atomic function that is triggered once before all test suites
   // globalSetup: null,
 
-  // A path to a module which exports an async function that is triggered once after all test suites
+  // A path to a module which exports an atomic function that is triggered once after all test suites
   // globalTeardown: null,
 
   // A set of global variables that need to be available in all test environments
@@ -146,6 +146,7 @@ module.exports = {
 
   // The glob patterns Jest uses to detect test files
   testMatch: [
+    // "**/*.test.ts"
     "**/*.test.ts"
   //   "**/?(*.)+(spec|test).[tj]s?(x)"
   ],

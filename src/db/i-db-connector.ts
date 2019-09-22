@@ -22,4 +22,6 @@ export interface IDbConnector {
 
 	list_collections(): Promise<string[]>
 	// get(collection_name: string, _ids: string[]): Promise<Model<any>>
+	
+	unset(_id:string, collection_name, key)
 }

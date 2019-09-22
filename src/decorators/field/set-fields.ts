@@ -1,29 +1,30 @@
 //region imports
-import {isPrimitive} from "../../utils/is-primitive";
-import {IFieldConfig} from "./i-field-config";
-import {Class} from "../../model/types/class";
-import {FIELDS, THIS} from "../../model/helpers/model-helpers";
-import {IFieldInstance, IFieldMap} from "../../model/types/i-field-map";
-import {Model} from "../..";
-import {ArrayMethod, MUTATING_ARRAY_FUNCTIONS} from "../has-many/helpers";
-import {cloneDeep, isEqual} from 'lodash'
+import {isPrimitive}                                      from "../../utils/is-primitive";
+import {IFieldConfig}                                     from "./i-field-config";
+import {Class}                                            from "../../model/types/class";
+import {FIELDS}                                           from "../../model/helpers/model-helpers";
+import {IFieldInstance, IFieldMap}                        from "../../model/types/i-field-map";
+import {Model}                                            from "../..";
+import {ArrayMethod, INSTANCES, MUTATING_ARRAY_FUNCTIONS} from "../has-many/helpers";
+import {cloneDeep, isEqual}                               from 'lodash'
 
 const READ_ONLYS = ['prototype']
-
 //endregion
 
+
 function setField(Class: Class, {key}: IFieldConfig) {
-
+	
 	const proxyFactory = (target, key): ProxyConstructor => {
-		let proxy: ProxyConstructor;
-
+		let proxy_map = new Map<string, ProxyConstructor>()
+		
+		
 		return new Proxy(target, {
-			get           : (target, property) => {
+			get           : (target, property) => {     //Proxy
 				const value = target[property];
 				if (isPrimitive(value) || READ_ONLYS.includes(<string>property)) {
 					return value;
 				}
-
+				
 				if (Array.isArray(target) &&
 					typeof value === "function" &&
 					MUTATING_ARRAY_FUNCTIONS.includes(<ArrayMethod>property)
@@ -33,33 +34,39 @@ function setField(Class: Class, {key}: IFieldConfig) {
 						const old_value = cloneDeep(target);
 						value.apply(target, args);
 						if (!isEqual(old_value, target)) {
-							target[THIS].update(key)
+							INSTANCES.get(target) && INSTANCES.get(target).update(key) //todo:remove &&
 						}
 					}
 				}
-
-				if (!proxy) {
-					target[property][THIS] = target[THIS]
-					proxy = proxyFactory(target[property], key)
+				
+				if (!proxy_map[property]) {
+					INSTANCES.set(target[property], INSTANCES.get(target))
+					proxy_map.set(<string>property, proxyFactory(target[property], key))
 				}
-				return proxy
+				return proxy_map.get(<string>property)
 			},
-			set           : (target, property, value, receiver) => {
+			set           : (target, property, value, receiver) => {  //Proxy
 				const old_value = target[property];
 				if (!isEqual(value, old_value)) {
 					target[property] = value;
-					target[THIS].update(key)
+					const This = INSTANCES.get(target);
+					if (!isPrimitive(value)) {
+						INSTANCES.set(target[property], This);
+					}
+					This.update(key)
 				}
 				return true;
 			},
 			deleteProperty: (target, index: number) => {
 				delete target[index]
-				target[THIS].update(key)
+				if (typeof index !== "symbol") {
+					INSTANCES.get(target).update(key)
+				}
 				return true
 			},
 		})
 	}
-
+	
 	Object.defineProperty(Class.prototype, key,
 		{
 			enumerable: true,
@@ -67,37 +74,39 @@ function setField(Class: Class, {key}: IFieldConfig) {
 				const
 					field: IFieldInstance = this[FIELDS][key],
 					value                 = field && field.value;
-
 				if (!field || !field.mode) return;
-
 				if (field.mode === 'primitive') {
 					return value
 				}
 				if (!field.proxy) {
-					value[THIS] = this;
+					// value[THIS] = this;
+					INSTANCES.set(value, this)
 					field.proxy = proxyFactory(value, key);
 				}
 				return field.proxy
 			},
-			set       : function (this: Model, new_value) { //Descriptor
+			set       : function (this: Model, value) { //Descriptor
 				const fields: IFieldMap = this[FIELDS];
-
-				if (isPrimitive(new_value)) {
+				
+				if (isPrimitive(value)) {
 					fields[key] = {
-						value: new_value,
+						value,
 						proxy: null,
 						mode : "primitive"
 					}
 				}
 				else {
-					new_value[THIS] = this;
+					INSTANCES.set(value, this)
 					fields[key] = {
 						value: null,
-						proxy: proxyFactory(new_value, key),
+						proxy: proxyFactory(value, key),
 						mode : "proxy"
 					}
 				}
-				this.update(key)
+				if (value === undefined){
+					return this.unset(key)
+				}
+				return this.update(key)
 			}
 		}
 	)

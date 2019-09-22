@@ -1,37 +1,22 @@
 //region imports
-import {MongoMemoryServer}    from 'mongodb-memory-server';
-import {Entity, field, Model} from "..";
-import {MONGO_CONFIG}         from "../CONFIG";
+import {MongoMemoryServer}           from 'mongodb-memory-server';
+import {Entity, field, Model}        from "..";
+import {MONGO_CONFIG}                from "../CONFIG";
+import {atomic}                      from "../functions/atomic";
+import {Class}                       from "../model/types/class";
+import {TEST_INIT_OPTS, mongoServer} from "./testing-utils";
 //endregion
 
-const mongoServer = new MongoMemoryServer();
 
-describe('@field', () => {
-	let
-		url,
-		port,
-		db_path,
-		db_name;
+describe('@Entity', () => {
 	
 	beforeAll(async () => {
-		url = await mongoServer.getConnectionString();
-		port = await mongoServer.getPort();
-		db_path = await mongoServer.getDbPath();
-		db_name = await mongoServer.getDbName();
-		await Entity.init({
-			db_config: {
-				url,
-				db_name,
-				port,
-				username: MONGO_CONFIG.user,
-				pwd     : MONGO_CONFIG.pwd
-			}
-		})
+		
+		await Entity.init(await TEST_INIT_OPTS())
 	})
 	
 	beforeEach(async () => {
 		await Entity.clear_db()
-		
 	});
 	
 	afterEach(async () => {
@@ -47,64 +32,102 @@ describe('@field', () => {
 		class Person extends Model {
 		}
 		
+		
 		const
-			person      = new Person(),
-			collections = (await Entity.db_connector.list_collections()),
+			person      = await atomic(() => new Person()),
+			collections = await Entity.db_connector.list_collections(),
 			collection  = Entity.db_connector.db.collection(Person.collection_name),
 			instances   = await collection.find({}).toArray();
 		
-		process.nextTick(async () => {
-			expect(Person.instances[0] === person).toBeTruthy();
-			expect(collections).toEqual(['Person'])
-			expect(instances.length).toEqual(1);
-			expect((<Person>instances[0])._id).toBeTruthy();
-			expect(instances)
-				.toEqual(expect.arrayContaining([expect.objectContaining({
-					'__parents__': []
-				})]))
+		expect(Person.instances[0] === person).toBeTruthy();
+		expect(person._id).toBeTruthy();
+		expect(typeof person._id === 'string').toBeTruthy();
+		expect(collections).toEqual(['Person'])
+		expect(instances.length).toEqual(1);
+		expect((<Person>instances[0])._id).toBeTruthy();
+		expect(instances)
+			.toEqual([{
+				_id          : person._id,
+				'__parents__': []
+			}])
+	})
+	
+	test('Delete an entity', async () => {
+		@Entity()
+		class Person extends Model {
+			@field name: string;
+			@field age: number;
+		}
+		
+		const
+			person     = await atomic(() => new Person({
+				name: 'person',
+				age : 30
+			})),
+			collection = Entity.db_connector.db.collection(Person.collection_name);
+		
+		await person.delete()
+		const instances = await collection.find({}).toArray();
+		
+		await Entity.reset()
+		await Entity.init(await TEST_INIT_OPTS())
+		
+		const Class = await atomic(() => {
+			@Entity()
+			class Person extends Model {
+				@field name: string;
+				@field age: number;
+			}
+			
+			return Person
 		})
 		
+		expect(instances.length).toEqual(0)
+		expect(Entity.Classes[0] === Class).toBeTruthy()
+		expect(Class.instances.length).toEqual(0)
 	})
 	
-	test('Delete an entity', async () => {
+	
+	test('Entity.init() should load entities', async () => {
 		@Entity()
-		class Person extends Model {
+		class Person extends Model<Person> {
 			@field name: string;
-			@field age: number;
 		}
 		
 		const
-			person     = new Person({name: 'person', age: 30}),
+			name       = 'person',
+			person     = await atomic(() => new Person({name})),
+			_id        = person._id,
 			collection = Entity.db_connector.db.collection(Person.collection_name);
 		
-		await person.delete()
+		await Entity.reset()
+		expect(Person.instances.length).toEqual(0)
 		
-		const
-			instances = await collection.find({}).toArray();
+		await Entity.init(await TEST_INIT_OPTS())
 		
-		setTimeout(() => {
-			expect(instances.length).toEqual(0)
-		}, 500)
-	})
-	
-	test('Delete an entity', async () => {
-		@Entity()
-		class Person extends Model {
-			@field name: string;
-			@field age: number;
-		}
+		const new_Class: Class = await atomic<Promise<Class>>(async () => {
+			@Entity()
+			class Person extends Model<Person> {
+				@field name: string;
+			}
+			return Person
+		})
 		
-		const
-			person     = new Person({name: 'person', age: 30}),
-			collection = Entity.db_connector.db.collection(Person.collection_name);
+		const instances = await collection.find({}).toArray();
 		
-		await person.delete()
+		expect(instances.length).toEqual(1)
+		expect(instances[0])
+			.toEqual({
+				_id,
+				name,
+				'__parents__': []
+			})
+		expect(new_Class.instances.length)
+			.toEqual(1)
 		
-		const
-			instances = await collection.find({}).toArray();
+		expect(new_Class.instances[0] instanceof new_Class).toBeTruthy()
 		
-		setTimeout(() => {
-			expect(instances.length).toEqual(0)
-		}, 500)
+		expect(new_Class.instances[0])
+			.toEqual(expect.objectContaining({_id}))
 	})
 })

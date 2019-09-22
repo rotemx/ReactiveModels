@@ -1,23 +1,30 @@
 //region imports
-import {IHasOneConfig}                         from "../decorators/has-one/i-has-one-config";
-import {IFieldConfig}                          from "../decorators/field/i-field-config";
-import {Class}                                 from "./types/class";
-import {json}                                  from "../utils/jsonify";
-import {IHasManyConfig}                        from "../decorators/has-many/i-has-many-config";
-import {serializeData}                         from "../db/serialize-data";
-import * as shortid                            from 'shortid';
-import {Entity}                                from "..";
-import {IFieldInstance, IFieldMap}             from "./types/i-field-map";
-import {FIELDS, IS_LOADING, PARENTS, REACTIVE} from "./helpers/model-helpers";
-import {IParentConfig}                         from "./types/i-parent-config";
-import {isEqual}                               from "lodash";
-import {isPrimitive}                           from "../utils/is-primitive";
-import {decycle}                               from "json-cyclic"
+import {IHasOneConfig}                                 from "../decorators/has-one/i-has-one-config";
+import {IFieldConfig}                                  from "../decorators/field/i-field-config";
+import {Class}                                         from "./types/class";
+import {json}                                          from "../utils/jsonify";
+import {IHasManyConfig}                                from "../decorators/has-many/i-has-many-config";
+import {serializeData}                                 from "../db/serialize-data";
+import * as shortid                                    from 'shortid';
+import {Entity}                                        from "..";
+import {IFieldInstance, IFieldMap}                     from "./types/i-field-map";
+import {ATOMIC, FIELDS, IS_LOADING, PARENTS, REACTIVE} from "./helpers/model-helpers";
+import {IParentConfig}                                 from "./types/i-parent-config";
+import {isEqual}                                       from "lodash";
+import {isPrimitive}                                   from "../utils/is-primitive";
+import {decycle}                                       from "json-cyclic"
 import moment = require("moment");
 
 //endregion
 
-export class Model {
+const atomify: (promise: Promise<any>) => Promise<any> = promise => {
+	if (Entity[ATOMIC]) {
+		Entity.promises.push(promise)
+	}
+	return promise
+}
+
+export class Model<T extends Model<T> = any> {
 	
 	//region statics
 	static [REACTIVE]: boolean;
@@ -43,7 +50,7 @@ export class Model {
 	
 	//endregion
 	
-	constructor(_data?: any) {
+	constructor(data?: Partial<T>) {
 		if (!Entity.db_connector) {
 			throw new Error('Entity db_connector not initialized. Did you forget to run "await Entity.mode()" ?')
 		}
@@ -53,18 +60,18 @@ export class Model {
 			throw new Error(`${this.Class.name} is not a Reactive Model. Did you forget to call the @Reactive() decorator?`)
 		}
 		
-		if (!(this._id || (_data && _data._id))) {
+		if (!(this._id || (data && data._id))) {
 			const now = moment().utc().format('DD-MM-YY--HH:mm');
-			this._id = `${this.Class.name}-${this['name'] || (_data && _data['name']) || ''}-${shortid.generate()}`;
+			this._id = `${this.Class.name}-${this['name'] || (data && data['name']) || ''}-${shortid.generate()}`;
 		}
 		
-		if (_data) {
-			if (_data._id) {
-				this._id = _data._id
+		if (data) {
+			if (data._id) {
+				this._id = data._id
 			}
-			if (_data['__parents__']) {
-				this[PARENTS] = _data['__parents__']
-				delete _data['__parents__'];
+			if (data['__parents__']) {
+				this[PARENTS] = data['__parents__']
+				delete data['__parents__'];
 			}
 			
 			[
@@ -73,7 +80,7 @@ export class Model {
 				...Object.keys(this.Class.hasOnes),
 			]
 				.forEach((key) => {
-					const value = _data[key];
+					const value = data[key];
 					if (value !== undefined) {
 						this[FIELDS][key] = <IFieldInstance>{
 							value,
@@ -85,7 +92,15 @@ export class Model {
 					}
 				});
 		}
-		this.Class.instances.push(this)
+		
+		return new Proxy<Model>(this, {
+			deleteProperty: function (This, key) {
+				This.unset(<string>key)
+				delete This[key];
+				return true
+			}
+		})
+		
 	};
 	
 	get data() {
@@ -135,7 +150,7 @@ export class Model {
 	
 	static async load<T extends Model>(): Promise<Model[]> {
 		const
-			prom    = Entity.db_connector.list(this.collection_name),
+			prom    = atomify(Entity.db_connector.list(this.collection_name)),
 			results = await prom;
 		
 		await prom.catch(err => {
@@ -151,13 +166,17 @@ export class Model {
 			})
 	}
 	
-	async set(data: object, save_after = true) {
+	async set(data: Partial<T>, save_after = true) {
 		this.auto_update_DB = false;
 		Object.assign(this, data)
 		this.auto_update_DB = true;
 		if (save_after) {
-			await this.update(data)
+			return atomify(this.update(data))
 		}
+	}
+	
+	async unset(key: string) {
+		return atomify(Entity.db_connector.unset(this._id, this.Class.collection_name, key))
 	}
 	
 	save = (): Promise<any> => {
@@ -168,11 +187,10 @@ export class Model {
 				return pre
 			}, {})
 		
-		return this.update({...this, ...fields, ...parents}, true)
+		return atomify(this.update({...this, ...fields, ...parents}, true))
 	};
 	
 	update = async (data_or_key: Partial<Model> & { '__parents__'?: IParentConfig[], '__fields__'?: IFieldMap } | string, force_update = false): Promise<any> => {
-		
 		
 		if (force_update || (!this[IS_LOADING] && this.auto_update_DB)) {
 			if (typeof data_or_key === "string") {
@@ -188,11 +206,11 @@ export class Model {
 				}
 			}
 			const serialized_data = serializeData.call(this, {...data_or_key});
-			return Entity.db_connector.upsert({_id: this._id}, serialized_data, this.Class.collection_name)
+			return atomify(Entity.db_connector.upsert({_id: this._id}, serialized_data, this.Class.collection_name))
 		}
 	};
 	
-	removeParent(parent: Model, key: string): void {
+	removeParent(parent: Model, key: string): Promise<any> | void {
 		const
 			parents = this[PARENTS],
 			idx     = parents.findIndex(p => p._id === parent._id);
@@ -201,10 +219,10 @@ export class Model {
 			return console.warn(`ReactiveModels: removeParent: Cannot find ${key} parent _id ${this._id} in child ${this._id} of class ${this.Class.name}, so couldn't remove it. Weird stuff. `);
 		}
 		parents.splice(idx, 1)
-		this.update("parents")
+		return atomify(this.update("parents"))
 	}
 	
-	addParent(parent: Model, key: string): void {
+	addParent(parent: Model, key: string): Promise<any> | void {
 		const
 			parents: IParentConfig[] = this[PARENTS],
 			idx                      = parents.findIndex(p => p._id === parent._id),
@@ -220,7 +238,7 @@ export class Model {
 			key,
 			collection_name: parent.Class.collection_name
 		})
-		this.update("parents")
+		return atomify(this.update("parents"))
 	}
 	
 	async get_parent_models(): Promise<Model[]> {
@@ -229,20 +247,22 @@ export class Model {
 			.get(p._id))
 	}
 	
-	static load_from_data() {
+	static load_from_data<T extends Model<T>>() {
 		if (!Entity.instances_data[this.collection_name]) {
 			return
 		}
 		this.instances = Entity.instances_data[this.collection_name]
-			.map((model_data: Model[]) => {
-				return new this(model_data)
+			.map((model_data: Model) => {
+				const This = new this(<T>model_data)
+				This[IS_LOADING] = false;
+				return This
 			})
 		
 		Entity.instances_data[this.collection_name] = undefined
 	}
 	
 	delete = (): Promise<void> => {
-		return Entity.db_connector.delete({_id: this._id}, this.Class.collection_name)
+		return atomify(Entity.db_connector.delete({_id: this._id}, this.Class.collection_name)
 			.then(async () => {
 				const parent_models = await this.get_parent_models();
 				for (const p of this[PARENTS]) {
@@ -275,15 +295,15 @@ export class Model {
 					child_instances[0][PARENTS].splice(index, 1)
 				}
 				await this.Class.load()
-			})
+			}))
 	};
 	
 	toJSON(key) {
 		if (key) {
-			return JSON.stringify(this[key])
+			return this[key]
 		}
 		else {
-			return JSON.stringify(this.data)
+			return this.data
 		}
 	}
 }

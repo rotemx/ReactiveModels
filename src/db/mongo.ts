@@ -54,6 +54,20 @@ export class Mongo implements IDbConnector {
 			})
 	}
 	
+	async unset(id: string, collection_name, key) {
+		if (!id || !collection_name) return Promise.reject('Mongo/update: no id or collection name provided.');
+		
+		console.log(`> Unsetting \t\t ${collection_name} \t\t ${id} \t \t key: ${key} \t\t`);
+		
+		return this
+			.db
+			.collection(collection_name)
+			.updateOne({_id: id}, {$unset: {[key]: 1}})
+			.catch(err => {
+				console.error('unset err', err);
+			})
+	}
+	
 	delete<T extends Model>(item: Model, collection_name: string): Promise<any> {
 		if (!item) return Promise.reject('Mongo/delete: no item provided.');
 		return this
