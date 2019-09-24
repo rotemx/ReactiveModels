@@ -1,28 +1,22 @@
 //region imports
-import {IHasOneConfig}                                 from "../decorators/has-one/i-has-one-config";
-import {IFieldConfig}                                  from "../decorators/field/i-field-config";
-import {Class}                                         from "./types/class";
-import {json}                                          from "../utils/jsonify";
-import {IHasManyConfig}                                from "../decorators/has-many/i-has-many-config";
-import {serializeData}                                 from "../db/serialize-data";
-import * as shortid                                    from 'shortid';
-import {Entity}                                        from "..";
-import {IFieldInstance, IFieldMap}                     from "./types/i-field-map";
-import {ATOMIC, FIELDS, IS_LOADING, PARENTS, REACTIVE} from "./helpers/model-helpers";
-import {IParentConfig}                                 from "./types/i-parent-config";
-import {isEqual}                                       from "lodash";
-import {isPrimitive}                                   from "../utils/is-primitive";
-import {decycle}                                       from "json-cyclic"
+import {IHasOneConfig}                         from "../decorators/has-one/i-has-one-config";
+import {IFieldConfig}                          from "../decorators/field/i-field-config";
+import {Class}                                 from "./types/class";
+import {json}                                  from "../utils/jsonify";
+import {IHasManyConfig}                        from "../decorators/has-many/i-has-many-config";
+import {serializeData}                         from "../db/serialize-data";
+import * as shortid                            from 'shortid';
+import {Entity}                                from "..";
+import {IFieldInstance, IFieldMap}             from "./types/i-field-map";
+import {FIELDS, IS_LOADING, PARENTS, REACTIVE} from "./helpers/model-helpers";
+import {IParentConfig}                         from "./types/i-parent-config";
+import {isEqual}                               from "lodash";
+import {isPrimitive}                           from "../utils/is-primitive";
+import {decycle}                               from "json-cyclic"
+import {atomify}                               from "./helpers/atomify";
 import moment = require("moment");
 
 //endregion
-
-const atomify: (promise: Promise<any>) => Promise<any> = promise => {
-	if (Entity[ATOMIC]) {
-		Entity.promises.push(promise)
-	}
-	return promise
-}
 
 export class Model<T extends Model<T> = any> {
 	
@@ -80,27 +74,41 @@ export class Model<T extends Model<T> = any> {
 				...Object.keys(this.Class.hasOnes),
 			]
 				.forEach((key) => {
-					const value = data[key];
-					if (value !== undefined) {
-						this[FIELDS][key] = <IFieldInstance>{
-							value,
-							proxy  : null,
-							hasMany: !!this.Class.hasManys[key],
-							hasOne : !!this.Class.hasOnes[key],
-							mode   : isPrimitive(value) ? "primitive" : "proxy"
-						}
+					let
+						value = data[key];
+					const
+						isHasMany = this.Class.hasManys[key],
+						isHasOne  = this.Class.hasOnes[key];
+					
+					if (value === undefined) {
+						return
+					}
+					
+					if ((isHasMany || isHasOne) && value instanceof Model) {
+						return this[key] = value
+					}
+					
+					this[FIELDS][key] = <IFieldInstance>{
+						value,
+						proxy  : null,
+						hasMany: !!isHasMany,
+						hasOne : !!isHasOne,
+						mode   : isPrimitive(value) ? "primitive" : "proxy"
 					}
 				});
 		}
 		
 		return new Proxy<Model>(this, {
 			deleteProperty: function (This, key) {
-				This.unset(<string>key)
+				if (This.Class.hasOnes[<string>key] || This.Class.hasManys[<string>key]) {
+					This[key] = null
+					return true
+				}
+				atomify(This.unset(<string>key))
 				delete This[key];
 				return true
 			}
 		})
-		
 	};
 	
 	get data() {
@@ -143,10 +151,10 @@ export class Model<T extends Model<T> = any> {
 		const results = <Model[]>this.instances.filter(inst => _ids.includes(inst._id));
 		
 		if (results.length !== _ids.length) {
-			console.warn(`Cannot find some or all child model with id included in ${json(_ids)} of class ${this.name}`);
+			console.warn(`Cannot find some or all models with id included in ${json(_ids)} of class ${this.name}`);
 		}
-		return results.length && results[0]
-	};
+		return results.length ? results[0] : null
+	}
 	
 	static async load<T extends Model>(): Promise<Model[]> {
 		const
@@ -241,10 +249,11 @@ export class Model<T extends Model<T> = any> {
 		return atomify(this.update("parents"))
 	}
 	
-	async get_parent_models(): Promise<Model[]> {
-		return this[PARENTS].map(p => Entity.Classes
+	getParentModels(): Model[] {
+		const results = this[PARENTS].map(p => Entity.Classes
 			.find(c => c.collection_name === p.collection_name)
-			.get(p._id))
+			.get(p._id));
+		return (results.length && results.every(Boolean)) ? results : []
 	}
 	
 	static load_from_data<T extends Model<T>>() {
@@ -264,7 +273,7 @@ export class Model<T extends Model<T> = any> {
 	delete = (): Promise<void> => {
 		return atomify(Entity.db_connector.delete({_id: this._id}, this.Class.collection_name)
 			.then(async () => {
-				const parent_models = await this.get_parent_models();
+				const parent_models = await this.getParentModels();
 				for (const p of this[PARENTS]) {
 					
 					const

@@ -107,9 +107,9 @@ export namespace Entity {
 				})
 		},
 		clear_db: () => Promise<void>                         = () => Entity.db_connector.delete_db(),
-		find: (_id: string, collection_name: string) => Model = (_id, collection_name) => {
+		find: (_id: string, collection_name: string) => Model | null = (_id, collection_name) => {
 			const Class = Entity.Classes.find(c => c.collection_name === collection_name);
-			return Class.get(_id);
+			return Class ? Class.get(_id) : null
 		}
 }
 

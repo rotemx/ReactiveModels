@@ -8,7 +8,9 @@ import {Model}                                            from "../..";
 import {ArrayMethod, INSTANCES, MUTATING_ARRAY_FUNCTIONS} from "../has-many/helpers";
 import {cloneDeep, isEqual}                               from 'lodash'
 
-const READ_ONLYS = ['prototype']
+const BUILT_INS = ['prototype', 'length', 'constructor', '@@__IMMUTABLE_ITERABLE__@@', 'toJSON', 'toBSON', '_bsontype',
+                   Symbol.toStringTag]
+
 //endregion
 
 
@@ -21,7 +23,7 @@ function setField(Class: Class, {key}: IFieldConfig) {
 		return new Proxy(target, {
 			get           : (target, property) => {     //Proxy
 				const value = target[property];
-				if (isPrimitive(value) || READ_ONLYS.includes(<string>property)) {
+				if (isPrimitive(value) || BUILT_INS.includes(<string>property)) {
 					return value;
 				}
 				
@@ -103,7 +105,7 @@ function setField(Class: Class, {key}: IFieldConfig) {
 						mode : "proxy"
 					}
 				}
-				if (value === undefined){
+				if (value === undefined) {
 					return this.unset(key)
 				}
 				return this.update(key)

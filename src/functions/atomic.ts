@@ -8,6 +8,7 @@ export function atomic<T>(fn: () => T): Promise<T> {
 		.all(Entity.promises)
 		.then(() => {
 			Entity.promises.length = 0;
+			Entity[ATOMIC] = false;
 			return value
 		})
 }

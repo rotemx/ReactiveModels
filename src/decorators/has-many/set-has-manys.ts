@@ -126,11 +126,10 @@ function setHasMany(UserClass: Class, key: string) {
 		},
 		set       : function (this: Model, new_array: Model[]) {  //Descriptor
 			if (!Array.isArray(new_array)) {
-				if (new_array === undefined || new_array === null)
+				if (!new_array === undefined || new_array === null)
 				{
-				
+					new_array = []
 				}
-				
 				throw new Error(`@hasMany: Value ${json(new_array)} is not an array.`)
 			}
 			

@@ -5,7 +5,6 @@ import {MONGO_CONFIG}         from "../CONFIG";
 import {atomic}               from "../functions/atomic";
 import {Class}                from "../model/types/class";
 import {resetEntity}          from "./testing-utils";
-import {FIELDS, PARENTS}      from "../model/helpers/model-helpers";
 
 declare let global;
 //endregion
@@ -35,6 +34,7 @@ describe('@field', () => {
 		
 		beforeEach(async () => {
 			await Entity.clear_db()
+			await resetEntity();
 		});
 		
 		afterEach(async () => {
@@ -111,23 +111,11 @@ describe('@field', () => {
 		test('set an object @field and load', async () => {
 			@Entity()
 			class Person extends Model<Person> {
-				@field address: { street: { name4: string, number: number }, building: { color: string, floors: number[] }, city: string }
+				@field address: { street: { name: string, number: number }, building: { color: string, floors: number[] }, city: string }
 			}
 			
-			const address = {
-				city    : 'Washington, DC',
-				building: {
-					color : 'white',
-					floors: [1, 2, 3, 4]
-				},
-				street  : {
-					name4 : 'Pennsylvania',
-					number: 1600,
-				}
-			};
-			
-			const [person] = await atomic(() => {
-				const person = new Person(<Partial<Person>>{
+			const person = await atomic<Person>(() =>
+				new Person(<Partial<Person>>{
 					address: {
 						city    : 'Washington, DC',
 						building: {
@@ -135,13 +123,11 @@ describe('@field', () => {
 							floors: [1, 2, 3, 4]
 						},
 						street  : {
-							name4 : 'Pennsylvania',
+							name  : 'Pennsylvania',
 							number: 1600,
 						}
 					}
-				})
-				return [person, Person]
-			});
+				}));
 			
 			const
 				collection = Entity.db_connector.db.collection(Person.collection_name),
@@ -157,15 +143,11 @@ describe('@field', () => {
 						floors: [1, 2, 3, 4]
 					},
 					street  : {
-						name4 : 'Pennsylvania',
+						name  : 'Pennsylvania',
 						number: 1600,
 					}
 				}
 			}))
-			
-			await atomic(() => {
-				person.address.building.floors.push(5)
-			})
 			
 			await resetEntity();
 			
@@ -180,12 +162,26 @@ describe('@field', () => {
 			
 			let person2 = <Person>Class2.instances[0];
 			
-			expect(person2.address.building.floors)
-				.toEqual([1, 2, 3, 4, 5])
+			expect(person2.data)
+				.toEqual({
+					_id    : person._id,
+					address: {
+						city    : 'Washington, DC',
+						building: {
+							color : 'white',
+							floors: [1, 2, 3, 4]
+						},
+						street  : {
+							name  : 'Pennsylvania',
+							number: 1600,
+						}
+					}
+					
+				})
 			
 		})
 		
-		test('delete a @field', async () => {
+		test('set a @field with undefined', async () => {
 			@Entity()
 			class Person extends Model<Person> {
 				@field address: { street: string }
@@ -194,7 +190,6 @@ describe('@field', () => {
 			const person = await atomic<Person>(() => {
 				return new Person({address: {street: 'Byron'}});
 			})
-			
 			
 			await atomic(() => {
 				person.address = undefined
@@ -210,15 +205,58 @@ describe('@field', () => {
 				
 				      return Person
 			      }),
-			
 			      person2 = <Person>Class2.instances[0];
 			
-			expect(person2)
-				.toEqual(expect.objectContaining({
-					_id      : person2._id,
-					[PARENTS]: [],
-					[FIELDS] : {},
-				}))
+			expect(person2.data)
+				.toEqual({
+					_id: person2._id,
+				})
+			
+			expect(person2.address).toBeFalsy()
+		})
+		
+		test('mutate a @field array with splice, pop and push', async () => {
+			@Entity()
+			class Person extends Model<Person> {
+				@field address: { street: string, rooms: number[] }
+			}
+			
+			const person = await atomic<Person>(() => {
+				return new Person({
+					address: {
+						street: 'Byron',
+						rooms: [1, 2, 3, 4]
+					}
+				});
+			})
+			
+			await atomic(() => {
+				person.address.rooms.push(5)
+				person.address.rooms.shift()
+				person.address.rooms.unshift(-1)
+				person.address.rooms.splice(2,1)
+			})
+			
+			await resetEntity();
+			
+			const Class2  = await atomic<Class>(() => {
+				      @Entity()
+				      class Person extends Model<Person> {
+					      @field address
+				      }
+				
+				      return Person
+			      }),
+			      person2 = <Person>Class2.instances[0];
+			
+			expect(person2.data)
+				.toEqual({
+					_id    : person2._id,
+					address: {
+						street: 'Byron',
+						rooms: [-1, 2, 4, 5]
+					}
+				})
 		})
 	}
 )
