@@ -1,20 +1,19 @@
 //region imports
-import {IHasOneConfig}                         from "../decorators/has-one/i-has-one-config";
+import {IHasOneDictionary}                     from "../decorators/has-one/i-has-one-dictionary";
 import {IFieldConfig}                          from "../decorators/field/i-field-config";
 import {Class}                                 from "./types/class";
 import {json}                                  from "../utils/jsonify";
-import {IHasManyConfig}                        from "../decorators/has-many/i-has-many-config";
+import {IHasManyDictionary}                    from "../decorators/has-many/i-has-many-dictionary";
 import {serializeData}                         from "../db/serialize-data";
 import * as shortid                            from 'shortid';
 import {Entity}                                from "..";
-import {IFieldInstance, IFieldMap}             from "./types/i-field-map";
+import {IFieldMap}                             from "./types/i-field-map";
 import {FIELDS, IS_LOADING, PARENTS, REACTIVE} from "./helpers/model-helpers";
 import {IParentConfig}                         from "./types/i-parent-config";
 import {isEqual}                               from "lodash";
-import {isPrimitive}                           from "../utils/is-primitive";
 import {decycle}                               from "json-cyclic"
 import {atomify}                               from "./helpers/atomify";
-import moment = require("moment");
+import {mountConstructorData}                  from "./helpers/mount-constructor-data";
 
 //endregion
 
@@ -23,9 +22,9 @@ export class Model<T extends Model<T> = any> {
 	//region statics
 	static [REACTIVE]: boolean;
 	static collection_name: string;
-	static fields: IFieldConfig[];
-	static hasOnes: IHasOneConfig;
-	static hasManys: IHasManyConfig;
+	static fields_config: IFieldConfig[];
+	static hasOnes: IHasOneDictionary;
+	static hasManys: IHasManyDictionary;
 	static instances: Model[];
 	
 	static get relationsKeys() {
@@ -45,58 +44,21 @@ export class Model<T extends Model<T> = any> {
 	//endregion
 	
 	constructor(data?: Partial<T>) {
+		this.Class = <Class>(this.constructor);
 		if (!Entity.db_connector) {
 			throw new Error('Entity db_connector not initialized. Did you forget to run "await Entity.mode()" ?')
 		}
-		this.Class = <typeof Model>(this.constructor);
 		
 		if (!this.Class[REACTIVE]) {
 			throw new Error(`${this.Class.name} is not a Reactive Model. Did you forget to call the @Reactive() decorator?`)
 		}
 		
 		if (!(this._id || (data && data._id))) {
-			const now = moment().utc().format('DD-MM-YY--HH:mm');
+			// const now = moment().utc().format('DD-MM-YY--HH:mm');
 			this._id = `${this.Class.name}-${this['name'] || (data && data['name']) || ''}-${shortid.generate()}`;
 		}
 		
-		if (data) {
-			if (data._id) {
-				this._id = data._id
-			}
-			if (data['__parents__']) {
-				this[PARENTS] = data['__parents__']
-				delete data['__parents__'];
-			}
-			
-			[
-				...this.Class.fields.map(f => f.key),
-				...Object.keys(this.Class.hasManys),
-				...Object.keys(this.Class.hasOnes),
-			]
-				.forEach((key) => {
-					let
-						value = data[key];
-					const
-						isHasMany = this.Class.hasManys[key],
-						isHasOne  = this.Class.hasOnes[key];
-					
-					if (value === undefined) {
-						return
-					}
-					
-					if ((isHasMany || isHasOne) && value instanceof Model) {
-						return this[key] = value
-					}
-					
-					this[FIELDS][key] = <IFieldInstance>{
-						value,
-						proxy  : null,
-						hasMany: !!isHasMany,
-						hasOne : !!isHasOne,
-						mode   : isPrimitive(value) ? "primitive" : "proxy"
-					}
-				});
-		}
+		mountConstructorData.call(this, data)
 		
 		return new Proxy<Model>(this, {
 			deleteProperty: function (This, key) {
@@ -112,31 +74,19 @@ export class Model<T extends Model<T> = any> {
 	};
 	
 	get data() {
-		const res = [
-			'_id',
-			...this.Class.fields.map(f => f.key),
-		]
-			.reduce((pre, curr) => {
-				const value = this[curr];
-				if (value !== null && value !== undefined) {
-					pre[curr] = value;
+		return Object.keys(this[FIELDS])
+			.reduce((pre, key) => {
+				if (this[FIELDS][key].hasOne) {
+					pre[key] = this[key].data;
+				}
+				else if (this[FIELDS][key].hasMany) {
+					pre[key] = this[key].map(m => m.data);
+				}
+				else {
+					pre[key] = this[key]
 				}
 				return pre
-			}, {})
-		
-		Object.assign(res, [
-			...Object.keys(this.Class.hasOnes),
-			...Object.keys(this.Class.hasManys),
-		]
-			.reduce((pre, curr) => {
-				const value = this[curr];
-				if (value !== null && value !== undefined) {
-					pre[curr] = Array.isArray(value) ? value.map(m => m.data) : value.data;
-				}
-				return pre
-			}, {}))
-		
-		return res
+			}, {_id: this._id})
 	}
 	
 	get json(): string {

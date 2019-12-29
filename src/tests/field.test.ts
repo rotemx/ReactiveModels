@@ -33,7 +33,7 @@ describe('@field', () => {
 		})
 		
 		beforeEach(async () => {
-			await Entity.clear_db()
+			await Entity.clearDb()
 			await resetEntity();
 		});
 		

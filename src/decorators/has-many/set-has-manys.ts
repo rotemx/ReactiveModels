@@ -8,16 +8,16 @@ import {Class}                                                                  
 import {IFieldInstance, IFieldMap, Primitive}                                   from "../../model/types/i-field-map";
 import {Model}                                                                  from "../../model/model";
 import {AnyFunction, ArrayMethod, INSTANCES, isIndex, MUTATING_ARRAY_FUNCTIONS} from "./helpers";
-
+import {Entity}                                                                 from "../..";
 //endregion
-
 
 function setHasMany(UserClass: Class, key: string) {
 	
 	const
 		updateFieldMap                 = (array: Model[]) => {
-			const This = INSTANCES.get(array);
-			const fields: IFieldMap = This[FIELDS];
+			const
+				This              = INSTANCES.get(array),
+				fields: IFieldMap = This[FIELDS];
 			
 			fields[key] = {
 				hasMany: true,
@@ -111,39 +111,54 @@ function setHasMany(UserClass: Class, key: string) {
 		enumerable: true,
 		get       : function (this: Model) {  //Descriptor
 			const field: IFieldInstance = this[FIELDS][key];
-			if (!field) return
+			if (!field) {
+				return
+			}
 			
 			if (!field.proxy) {
 				const
-					ids_array       = <string[]>field.value,
-					child_Class     = this.Class.hasManys[key].Class,
-					target: Model[] = ids_array.map(child_Class.get);
+					child_collection_name = this.Class.hasManys[key].collection_name,
+					child_Class           = Entity.Classes.find(cl => cl.collection_name === child_collection_name),
+					ids_array             = <string[]>field.value;
 				
-				INSTANCES.set(target, this)
-				field.proxy = new Proxy<Model[]>(target, handler)
+				if (child_Class) {
+					const target: Model[] = ids_array.map(child_Class.get.bind(child_Class));
+					INSTANCES.set(target, this)
+					field.proxy = new Proxy<Model[]>(target, handler)
+					return field.proxy
+				}
+				else {
+					console.error(`Class ${child_collection_name} not loaded (did you forget to declare it with the "class" keyword?`);
+					return null
+				}
 			}
 			return field.proxy
 		},
 		set       : function (this: Model, new_array: Model[]) {  //Descriptor
 			if (!Array.isArray(new_array)) {
-				if (!new_array === undefined || new_array === null)
-				{
+				if (!new_array === undefined || new_array === null) {
 					new_array = []
 				}
-				throw new Error(`@hasMany: Value ${json(new_array)} is not an array.`)
+				else
+				{
+					throw new Error(`@hasMany: Value ${json(new_array)} is not an array.`)
+				}
 			}
 			
 			if (!new_array.every(m => (m instanceof Model) && m.Class[REACTIVE])) {
 				throw new Error(`@hasMany: Value ${json(new_array)} contains non-@entity values.`)
 			}
 			else if (new_array.length) {
-				this.Class.hasManys[key] = {Class: new_array[0].Class}
+				const collection_name = new_array[0].Class.collection_name;
+				this.Class.hasManys[key] = {collection_name}
+				
+				Entity.saveConfig(this.Class)
 			}
 			
 			const old_array: Model[] = [...(this[key] || [])];
 			
 			INSTANCES.set(new_array, this)
-
+			
 			updateFieldMap(new_array)
 			syncParents(old_array, new_array)
 		}

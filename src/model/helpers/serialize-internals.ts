@@ -7,7 +7,7 @@ import {FIELDS} from "./model-helpers";
 type InternalKey = keyof IFieldMap;
 type InternalsDict = { [key in InternalKey]?: any };
 
-const EXCLUDED: (InternalKey)[] = ['fields']
+const EXCLUDED: (InternalKey)[] = ['fields_config']
 
 export function serializeInternals(model: Model): InternalsDict {
 	const

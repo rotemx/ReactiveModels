@@ -4,6 +4,7 @@ import {IDbConnector}    from "./i-db-connector";
 import {IDbConfig}       from "./i-db-config";
 import {Model}           from "..";
 import {json}            from "../utils/jsonify";
+import {IDableObject}    from "./i-idable";
 //endregion
 
 const DEFAULT_CONFIG = {
@@ -16,6 +17,7 @@ const DEFAULT_CONFIG = {
 	db_name      : 'ReactiveModels',
 	authenticated: true
 };
+
 
 export class Mongo implements IDbConnector {
 	client: MongoClient;
@@ -38,9 +40,29 @@ export class Mongo implements IDbConnector {
 		console.log(`Mongo/init: Connected successfully to mongo DB at ${hostname}:${port} `);
 	}
 	
-	upsert<T extends Model>(query: { _id: string, [prop: string]: any }, data: object, collection_name: string): Promise<any> {
+	bulkWrite<T extends Model<T>>(collection_name: string, data: IDableObject[]): Promise<any> {
+		if (!data || !Array.isArray(data) || !data.length) return Promise.reject('Mongo/update: no item provided.');
+		console.log(`> Bulk Writing \t\t ${collection_name} \t\t \t ${json(data)} \t\t`);
+		
+		return this
+			.db
+			.collection(collection_name)
+			.bulkWrite(data.map(d => (
+				{
+					updateOne: {
+						filter: {_id: d._id},
+						$set  : d
+					},
+					upsert   : true
+				})))
+			.catch(err => {
+				console.error('mongo bulkWrite err', err);
+			})
+	}
+	
+	upsert<T extends Model<T>>(query: IDableObject, data: object | object[], collection_name: string): Promise<any> {
 		if (!query || !collection_name) return Promise.reject('Mongo/update: no item provided.');
-		if (!query._id) {
+		if (query._id === undefined) {
 			throw new Error('_id was not specified in upsert')
 		}
 		console.log(`> Upserting \t\t ${collection_name} \t\t ${query._id} \t \t ${json(data)} \t\t`);
@@ -78,7 +100,7 @@ export class Mongo implements IDbConnector {
 		this.client && this.client.close();
 	}
 	
-	async list(collection_name: string, ids?: string[]): Promise<Model[]> {
+	async list<T = Model>(collection_name: string, ids?: string[]): Promise<T[]> {
 		if (!collection_name) return Promise.reject('Mongo/list: no collection name provided.');
 		if (!this.db.collection(collection_name)) {
 			console.error(`db.collection ${collection_name} is undefined!`, 'WTF');

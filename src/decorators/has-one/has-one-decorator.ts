@@ -1,6 +1,7 @@
 //region imports
-import {Class} from "../../model/types/class";
-import {Model} from "../../model/model";
+import {Class}  from "../../model/types/class";
+import {Model}  from "../../model/model";
+import {Entity} from "../..";
 //endregion
 
 export const hasOne = (
@@ -8,10 +9,10 @@ export const hasOne = (
 	key: string
 ): void => {
 	const
-		parent_Class = <Class>base.constructor,
-		child_Class  = Reflect.getMetadata("design:type", base, key);
-
+		Class       = <Class>base.constructor,
+		child_Class = Reflect.getMetadata("design:type", base, key);
+	
 	console.log(`Setting HasOne key ${key} with type ${child_Class.name}`);
-	parent_Class.hasOnes = parent_Class.hasOnes || {};
-	parent_Class.hasOnes[key] = child_Class;
+	Class.hasOnes = Class.hasOnes || {};
+	Class.hasOnes[key] = child_Class;
 }

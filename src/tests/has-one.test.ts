@@ -7,10 +7,19 @@ import {resetEntity}                  from "./testing-utils";
 import {Class}                        from "../model/types/class";
 
 declare let global;
+const mongoServer = new MongoMemoryServer();
+
 //endregion
 
+declare class Cat extends Model<Cat> {
+	color: 'white' | 'brown' | 'black' | 'redhead'
+}
 
-const mongoServer = new MongoMemoryServer();
+declare class Person extends Model<Person> {
+	cat: Cat
+	name: string
+}
+
 
 describe('@hasOne', () => {
 		let url, port, db_path, db_name;
@@ -32,7 +41,7 @@ describe('@hasOne', () => {
 		})
 		
 		beforeEach(async () => {
-			await Entity.clear_db()
+			await Entity.clearDb()
 			await resetEntity();
 		});
 		
@@ -44,17 +53,21 @@ describe('@hasOne', () => {
 		})
 		
 		test('Set a hasOne relation', async () => {
-			@Entity()
-			class Cat extends Model<Cat> {
-				@field color: 'white' | 'brown' | 'black' | 'redhead'
-			}
-			
-			@Entity()
-			class Person extends Model<Person> {
-				@hasOne cat: Cat
-				@field name: string
-			}
-			
+			const [Person, Cat] = await atomic(() => {
+					@Entity()
+					class Cat extends Model<Cat> {
+						@field color: 'white' | 'brown' | 'black' | 'redhead'
+					}
+					
+					@Entity()
+					class Person extends Model<Person> {
+						@hasOne cat: Cat
+						@field name: string
+					}
+					
+					return [Person, Cat]
+				}
+			)
 			const
 				color              = 'redhead',
 				name               = 'John Arbuckle',
@@ -138,11 +151,13 @@ describe('@hasOne', () => {
 			class Cat extends Model<Cat> {
 				@field color: 'white' | 'brown' | 'black' | 'redhead'
 			}
+			
 			@Entity()
 			class Person extends Model<Person> {
 				@hasOne cat: Cat
 				@field name: string
 			}
+			
 			const
 				color  = 'redhead',
 				name   = 'John Arbuckle',
@@ -179,20 +194,20 @@ describe('@hasOne', () => {
 			expect(cat2.getParentModels()).toEqual([])
 			
 		})
-
-	
-	
-	
+		
+		
 		test('Delete a @hasOne relation', async () => {
 			@Entity()
 			class Cat extends Model<Cat> {
 				@field color: 'white' | 'brown' | 'black' | 'redhead'
 			}
+			
 			@Entity()
 			class Person extends Model<Person> {
 				@hasOne cat: Cat
 				@field name: string
 			}
+			
 			const
 				color  = 'redhead',
 				name   = 'John Arbuckle',

@@ -1,4 +1,4 @@
-export {Entity} from "./decorators/entity/entity-decorator";
+export {Entity} from "./decorators/entity/entity";
 export {Model} from "./model/model";
 export {hasOne} from "./decorators/has-one/has-one-decorator";
 export {hasMany} from "./decorators/has-many/has-many-decorator";

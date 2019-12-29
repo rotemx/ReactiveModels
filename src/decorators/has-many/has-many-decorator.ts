@@ -1,6 +1,7 @@
 //region imports
-import {Class} from "../../model/types/class";
-import {Model} from "../../model/model";
+import {Class}  from "../../model/types/class";
+import {Model}  from "../../model/model";
+import {Entity} from "../..";
 //endregion
 
 export const hasMany = (
@@ -13,11 +14,12 @@ export const hasMany = (
 		Type  = Reflect.getMetadata("design:type", base, key);
 
 	if (Type !== Array) {
-		throw new Error(`A hasMany type must be an array of Models`)
+		throw new Error(`A hasMany type must be an array of Models. Actual type is ${Type.name}`)
 	}
 
 	console.log(`Setting HasMany key ${key} with type ${Type.name}`);
 	Class.hasManys = Class.hasManys || {};
-	Class.hasManys[key] = {Class:null}
+	Class.hasManys[key] = {collection_name:null}
+	
 }
 

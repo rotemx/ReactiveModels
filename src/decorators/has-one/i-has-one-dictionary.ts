@@ -2,6 +2,6 @@
 import {Class} from '../../model/types/class';
 //endregion
 
-export interface IHasOneConfig{
+export interface IHasOneDictionary{
 	[collection_name: string]: Class;
 }

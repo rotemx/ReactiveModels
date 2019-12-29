@@ -19,7 +19,6 @@ function setField(Class: Class, {key}: IFieldConfig) {
 	const proxyFactory = (target, key): ProxyConstructor => {
 		let proxy_map = new Map<string, ProxyConstructor>()
 		
-		
 		return new Proxy(target, {
 			get           : (target, property) => {     //Proxy
 				const value = target[property];
@@ -115,7 +114,7 @@ function setField(Class: Class, {key}: IFieldConfig) {
 }
 
 export function setFields(Class: Class): void {
-	for (const field of Class.fields) {
+	for (const field of Class.fields_config) {
 		setField(Class, field)
 	}
 }

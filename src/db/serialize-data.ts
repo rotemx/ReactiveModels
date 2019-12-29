@@ -3,7 +3,7 @@ import {Model} from "../model/model";
 import {FIELDS} from "../model/helpers/model-helpers";
 //endregion
 
-const EXCLUDED_PROPS = ['db', 'auto_update_DB', 'collection_name', 'fields', '_is_loading'];
+const EXCLUDED_PROPS = ['db', 'auto_update_DB', 'collection_name', 'fields_config', '_is_loading'];
 
 
 export function serializeData(this: Model, data: Partial<Model>) {
@@ -23,11 +23,11 @@ export function serializeData(this: Model, data: Partial<Model>) {
 				return
 			}
 
-			if (['_id', '__parents__', '__fields__'].includes(key)) {
+			if (['_id', '__parents__'].includes(key)) {
 				result[key] = data[key]
 			}
 			else if ([
-				...this.Class.fields.map(f => f.key),
+				...this.Class.fields_config.map(f => f.key),
 				...Object.keys(this.Class.hasManys),
 				...Object.keys(this.Class.hasOnes)
 			].includes(key)) {
