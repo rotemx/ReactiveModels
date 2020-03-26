@@ -1,14 +1,11 @@
 //region imports
-import {processMgmt}  from "./utils/process-mgmt";
-import {MONGO_CONFIG} from "./CONFIG";
-import {Model}        from "./model/model";
-import {field}        from "./decorators/field/field-decorator";
-import {Entity}       from "./decorators/entity/entity";
-import {hasMany}      from "./decorators/has-many/has-many-decorator";
-import {hasOne}       from "./decorators/has-one/has-one-decorator";
-import {atomic}       from "./functions/atomic";
 
 //endregion
+import {Entity, field, hasMany, hasOne, Model} from "../src";
+import {processMgmt}                           from "../src/utils/process-mgmt";
+import {MONGO_CONFIG}                          from "../CONFIG";
+import {atomic}                                from "../src/functions/atomic";
+
 declare class Cat extends Model<Cat> {
 	name: string
 }
@@ -64,7 +61,8 @@ declare class Person extends Model<Person> {
 		class Person extends Model<Person> {
 			@field name: string;
 			@field age: number;
-			@hasOne brother: Person
+			@field cat: Cat;
+			@hasOne brother: Person;
 			@hasMany cats: Cat[]
 		}
 		

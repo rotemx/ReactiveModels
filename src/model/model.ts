@@ -46,11 +46,11 @@ export class Model<T extends Model<T> = any> {
 	constructor(data?: Partial<T>) {
 		this.Class = <Class>(this.constructor);
 		if (!Entity.db_connector) {
-			throw new Error('Entity db_connector not initialized. Did you forget to run "await Entity.mode()" ?')
+			throw new Error('Entity db_connector not initialized. Did you forget to run "await Entity.init()" ?')
 		}
 		
 		if (!this.Class[REACTIVE]) {
-			throw new Error(`${this.Class.name} is not a Reactive Model. Did you forget to call the @Reactive() decorator?`)
+			throw new Error(`${this.Class.name} is not a Reactive Model. Did you forget to call the @Entity() decorator?`)
 		}
 		
 		if (!(this._id || (data && data._id))) {

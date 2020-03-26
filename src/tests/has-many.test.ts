@@ -1,7 +1,7 @@
 //region imports
 import {MongoMemoryServer}             from 'mongodb-memory-server';
 import {Entity, field, hasMany, Model} from "..";
-import {MONGO_CONFIG}                  from "../CONFIG";
+import {MONGO_CONFIG}                  from "../../CONFIG";
 import {atomic}                        from "../functions/atomic";
 import {resetEntity}                   from "./testing-utils";
 import {Class}                         from "../model/types/class";
@@ -208,8 +208,7 @@ describe('@hasMany', () => {
 			expect(cat1.getParentModels()).toEqual([person])
 			expect(cat2.getParentModels()).toEqual([person])
 			
-			checkRam(cats, [[person]])
-			
+			checkRam(cats, [person])
 			
 		})
 		

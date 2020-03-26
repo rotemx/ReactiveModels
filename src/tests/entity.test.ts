@@ -1,7 +1,5 @@
 //region imports
-import {MongoMemoryServer}                        from 'mongodb-memory-server';
 import {Entity, field, Model}                     from "..";
-import {MONGO_CONFIG}                             from "../CONFIG";
 import {atomic}                                   from "../functions/atomic";
 import {Class}                                    from "../model/types/class";
 import {TEST_INIT_OPTS, mongoServer, resetEntity} from "./testing-utils";
@@ -32,7 +30,6 @@ describe('@Entity', () => {
 		@Entity()
 		class Person extends Model {
 		}
-		
 		
 		const
 			person      = await atomic(() => new Person()),

@@ -1,6 +1,6 @@
 //region imports
 import {MongoMemoryServer}  from "mongodb-memory-server-core";
-import {MONGO_CONFIG}       from "../CONFIG";
+import {MONGO_CONFIG}       from "../../CONFIG";
 import {IEntityInitOptions} from "../decorators/entity/i-entity-init-options";
 import {Entity}             from "..";
 //endregion

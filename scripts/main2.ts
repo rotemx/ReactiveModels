@@ -1,10 +1,10 @@
-import {Entity, field, Model} from "./src";
-import {MONGO_CONFIG}         from "./src/CONFIG";
+import {Entity, field, Model} from "./../src";
+import {MONGO_CONFIG}         from "../CONFIG";
+
 
 
 (async () => {
 	
-	console.log('INSIDE');
 	await Entity.init({db_config: {username: MONGO_CONFIG.user, pwd: MONGO_CONFIG.pwd}});
 	
 	@Entity()
@@ -20,4 +20,3 @@ import {MONGO_CONFIG}         from "./src/CONFIG";
 	
 	
 })()
-console.log('AFTER');
