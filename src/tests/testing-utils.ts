@@ -28,6 +28,6 @@ export const TEST_INIT_OPTS = async (): Promise<IEntityInitOptions> => {
 }
 
 export const resetEntity = async ():Promise<any> => {
-	return Entity.reset().then(async () => Entity.init(await TEST_INIT_OPTS()))
+	return Entity.reset().then(async () =>  await Entity.init(await TEST_INIT_OPTS()))
 	
 }

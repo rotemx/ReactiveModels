@@ -18,7 +18,6 @@ const DEFAULT_REACTIVE_INIT_OPTIONS: IEntityInitOptions = {
 		      hostname     : 'localhost',
 		      port         : 27017,
 		      authenticated: false
-		
 	      }
       },
       CONFIG_COLLECTION_NAME                            = '__EntityConfig__';
@@ -127,15 +126,13 @@ export namespace Entity {
 		loadInstancesData: () => Promise<void>                       = async () => {
 			let
 				collections = await Entity.db_connector
-					.list_collections(),
+				                          .list_collections(),
 				proms       = collections.map(coll_name => Entity.db_connector.list(coll_name))
 			
 			return Promise.all<any[]>(proms)
-				.then(arrays => {
-					arrays.forEach((models_data, i) => {
-						Entity.instances_data[collections[i]] = models_data
-					})
-				})
+			              .then(arrays =>
+				              arrays
+					              .forEach((models_data, i) => Entity.instances_data[collections[i]] = models_data))
 		},
 		clearDb: () => Promise<void>                                 = () => {
 			

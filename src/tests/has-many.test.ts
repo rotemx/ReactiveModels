@@ -6,8 +6,6 @@ import {atomic}                        from "../functions/atomic";
 import {resetEntity}                   from "./testing-utils";
 import {Class}                         from "../model/types/class";
 
-declare let global;
-
 declare class Cat extends Model<Cat> {
 	name: string
 	color: 'white' | 'brown' | 'black' | 'redhead'
@@ -172,8 +170,10 @@ describe('@hasMany', () => {
 				expect(person_reloaded.cats.length).toEqual(2)
 				expect(person_reloaded.cats.every(m => m instanceof CatReloaded)).toBeTruthy()
 				
+				
 				expect(person_reloaded.cats[0].getParentModels()).toEqual([person_reloaded])
 				expect(person_reloaded.cats[1].getParentModels()).toEqual([person_reloaded])
+				
 				
 				expect(cat1_reloaded.data)
 					.toEqual({

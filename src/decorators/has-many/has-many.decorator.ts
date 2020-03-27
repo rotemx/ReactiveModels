@@ -1,7 +1,6 @@
 //region imports
-import {Class}  from "../../model/types/class";
-import {Model}  from "../../model/model";
-import {Entity} from "../..";
+import {Class} from "../../model/types/class";
+import {Model} from "../../model/model";
 //endregion
 
 export const hasMany = (
