@@ -33,7 +33,7 @@ describe('@field', () => {
 		})
 		
 		beforeEach(async () => {
-			await Entity.clearDb()
+			await Entity.db.delete_db()
 			await resetEntity();
 		});
 		
@@ -52,7 +52,7 @@ describe('@field', () => {
 			
 			const
 				person     = new Person({color: 'green'}),
-				collection = Entity.db_connector.db.collection(Person.collection_name),
+				collection = Entity.db.db.collection(Person.collection_name),
 				instances  = await collection.find({}).toArray();
 			
 			expect(instances)
@@ -85,7 +85,7 @@ describe('@field', () => {
 				person     = await atomic<Person>(() => {
 					return new Person({color: 'green'});
 				}),
-				collection = Entity.db_connector.db.collection(Person.collection_name),
+				collection = Entity.db.db.collection(Person.collection_name),
 				instances  = await collection.find({}).toArray();
 			
 			
@@ -130,7 +130,7 @@ describe('@field', () => {
 				}));
 			
 			const
-				collection = Entity.db_connector.db.collection(Person.collection_name),
+				collection = Entity.db.db.collection(Person.collection_name),
 				instances  = await collection.find({}).toArray();
 			
 			expect(instances[0]).toEqual(expect.objectContaining(<Partial<Person>>{

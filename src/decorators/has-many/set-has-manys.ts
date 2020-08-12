@@ -3,7 +3,7 @@ import {json}                                                                   
 import {
 	FIELDS,
 	REACTIVE
-}                                                                               from "../../model/helpers/model-helpers";
+}                                                                               from "../../model/helpers/model-symbols";
 import {Class}                                                                  from "../../model/types/class";
 import {IFieldInstance, IFieldMap, Primitive}                                   from "../../model/types/i-field-map";
 import {Model}                                                                  from "../../model/model";
@@ -99,7 +99,7 @@ function setHasMany(UserClass: Class, key: string) {
 					child.addParent(INSTANCES.get(array), key)
 				}
 				else {
-					throw new Error(`${String(prop)} is not an index.`)
+					throw new Error(`@hasMany: ${String(prop)} is not an index.`)
 				}
 				array[prop] = child
 				updateFieldMap(array)
@@ -128,8 +128,7 @@ function setHasMany(UserClass: Class, key: string) {
 					return field.proxy
 				}
 				else {
-					console.error(`Class ${child_collection_name} not loaded (did you forget to declare it with the "class" keyword?`);
-					return null
+					throw new Error(`@hasMany: Class ${child_collection_name} not loaded (did you forget to declare it with the JavaScript "class" keyword?`);
 				}
 			}
 			return field.proxy

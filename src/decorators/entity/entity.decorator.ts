@@ -9,9 +9,12 @@ import {IEntityDecoratorOptions}        from "./i-entity-decorator-options";
 import {setHasManys}                    from "../has-many/set-has-manys";
 import {setHasOnes}                     from "../has-one/set-has-ones";
 import {setFields}                      from "../field/set-fields";
-import {IS_LOADING, REACTIVE}           from "../../model/helpers/model-helpers";
+import {IS_LOADING, REACTIVE}           from "../../model/helpers/model-symbols";
 import {json}                           from "../../utils/jsonify";
 import {IClassConfig, IClassConfigDict} from "./i-class-config-dict";
+
+declare const global;
+global.js = require('lodash.clonedeep');
 
 const DEFAULT_REACTIVE_INIT_OPTIONS: IEntityInitOptions = {
 	      db_config: {
@@ -29,8 +32,9 @@ export function Entity<T extends Model<T>>({collection_name}: IEntityDecoratorOp
 		if (!Entity.__init__) {
 			throw new Error(`Please run "await Entity.init()" before using the @Entity() decorator.`)
 		}
+		
 		Class[REACTIVE] = true;
-		Class.collection_name = collection_name || (Class.name);
+		Class.collection_name = collection_name || Class.name;
 		Class.instances = [];
 		Class.fields_config = Class.fields_config || []
 		Class.hasOnes = Class.hasOnes || {}
@@ -67,7 +71,7 @@ export function Entity<T extends Model<T>>({collection_name}: IEntityDecoratorOp
 
 export namespace Entity {
 	export let
-		db_connector: IDbConnector,
+		db: IDbConnector,
 		__init__: boolean                                    = false,
 		instances_data: { [collection_name: string]: any[] } = {},
 		Classes: Class[]                                     = [],
@@ -78,9 +82,9 @@ export namespace Entity {
 		init: (db?: IEntityInitOptions) => Promise<any>              = async ({db_config}: IEntityInitOptions = DEFAULT_REACTIVE_INIT_OPTIONS): Promise<any> => {
 			Entity.__init__ = true
 			console.log('[>] Entity Models Initializing...');
-			if (!Entity.db_connector) {
+			if (!Entity.db) {
 				const db_instance = db_config.mongo_instance || new Mongo();
-				Entity.db_connector = db_instance;
+				Entity.db = db_instance;
 				await db_instance.init(db_config);
 			}
 			await loadConfig()
@@ -88,7 +92,7 @@ export namespace Entity {
 			console.log('[] Entity Models Initialized.');
 		},
 		loadConfig: () => Promise<void>                              = async () => {
-			let config = (await Entity.db_connector.list<IClassConfig>(CONFIG_COLLECTION_NAME));
+			let config = (await Entity.db.list<IClassConfig>(CONFIG_COLLECTION_NAME));
 			if (config.length) {
 				console.log(`>>>config loaded: ${json(config)}`);
 				Entity.class_config = config.reduce<IClassConfigDict>((pre, curr) => {
@@ -99,10 +103,10 @@ export namespace Entity {
 					return pre
 				}, {});
 				
-				for (const class_config of config) {
-					let Class = Entity.Classes.find(cl => cl.collection_name === class_config.collection_name)
+				for (const {collection_name, hasManys} of config) {
+					let Class = Entity.Classes.find(cl => cl.collection_name === collection_name)
 					if (Class) {
-						Class.hasManys = class_config.hasManys
+						Class.hasManys = hasManys
 					}
 				}
 			}
@@ -125,21 +129,15 @@ export namespace Entity {
 		},
 		loadInstancesData: () => Promise<void>                       = async () => {
 			let
-				collections = await Entity.db_connector
-				                          .list_collections(),
-				proms       = collections.map(coll_name => Entity.db_connector.list(coll_name))
+				collections = await Entity.db.list_collections(),
+				proms       = collections.map(coll_name => Entity.db.list(coll_name))
 			
 			return Promise.all<any[]>(proms)
 			              .then(arrays =>
 				              arrays
-					              .forEach((models_data, i) => Entity.instances_data[collections[i]] = models_data))
-		},
-		clearDb: () => Promise<void>                                 = () => {
-			
-			if (!Entity.__init__) {
-				throw new Error(`Please initialize ReavtiveModels with 'await Entity.init()' before calling clearDb()`)
-			}
-			return Entity.db_connector.delete_db()
+					              .forEach((models_data, i) => {
+						              Entity.instances_data[collections[i]] = models_data
+					              }))
 		},
 		find: (_id: string, collection_name: string) => Model | null = (_id, collection_name) => {
 			const Class = Entity.Classes.find(c => c.collection_name === collection_name);
@@ -148,7 +146,7 @@ export namespace Entity {
 		saveConfig: (Class?: Class) => Promise<void>                 = async (Class?: Class) => {
 			
 			if (Class) {
-				return Entity.db_connector.upsert(
+				return Entity.db.upsert(
 					{
 						_id: Class.collection_name
 					},
@@ -165,9 +163,13 @@ export namespace Entity {
 					collection_name: Class.collection_name,
 					hasMany        : Class.hasManys
 				}))
-			return Entity.db_connector.bulkWrite(CONFIG_COLLECTION_NAME, config)
-		}
+			return Entity.db.bulkWrite(CONFIG_COLLECTION_NAME, config)
+		},
+		end: () => Promise<void>                                     = async () => {
+			return Entity.db.close()
+		};
 }
+
 
 
 

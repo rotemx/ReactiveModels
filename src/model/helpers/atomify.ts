@@ -1,5 +1,5 @@
 import {Entity} from "../..";
-import {ATOMIC} from "./model-helpers";
+import {ATOMIC} from "./model-symbols";
 
 export const atomify: (promise: Promise<any>) => Promise<any> = promise => {
 	if (Entity[ATOMIC]) {

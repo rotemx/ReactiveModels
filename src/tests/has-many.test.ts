@@ -6,6 +6,8 @@ import {atomic}                        from "../functions/atomic";
 import {resetEntity}                   from "./testing-utils";
 import {Class}                         from "../model/types/class";
 
+
+
 declare class Cat extends Model<Cat> {
 	name: string
 	color: 'white' | 'brown' | 'black' | 'redhead'
@@ -69,7 +71,7 @@ describe('@hasMany', () => {
 		})
 		
 		beforeEach(async () => {
-			await Entity.clearDb()
+			await Entity.db.delete_db()
 			await resetEntity();
 		});
 		
@@ -85,8 +87,8 @@ describe('@hasMany', () => {
 			
 			const
 				[Person, Cat, cat1, cat2, cats, person] = await hasManyBase(),
-				persons_collection                      = Entity.db_connector.db.collection(Person.collection_name),
-				cats_collection                         = Entity.db_connector.db.collection(Cat.collection_name),
+				persons_collection                      = Entity.db.db.collection(Person.collection_name),
+				cats_collection                         = Entity.db.db.collection(Cat.collection_name),
 				person_data                             = await persons_collection.find({}).toArray(),
 				cats_data                               = await cats_collection.find({}).toArray();
 			
@@ -151,9 +153,10 @@ describe('@hasMany', () => {
 					
 					      return [Person, Cat]
 				      }),
+				
 				      person_reloaded               = <Person>PersonReloaded.instances[0],
-				      cat1_reloaded                 = <Cat>CatReloaded.instances[0],
-				      cat2_reloaded                 = <Cat>CatReloaded.instances[1];
+				      cat1_reloaded                 = (<Cat[]>CatReloaded.instances).find(cat => cat.name === cat1.name),  //order of instances is not guaranteed to persist (maybe it should?)
+				      cat2_reloaded                 = (<Cat[]>CatReloaded.instances).find(cat => cat.name === cat2.name);
 				
 				expect(person_reloaded
 					.cats.map(cat => cat.data))

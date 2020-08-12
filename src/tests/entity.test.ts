@@ -14,7 +14,7 @@ describe('@Entity', () => {
 	})
 	
 	beforeEach(async () => {
-		await Entity.clearDb()
+		await Entity.db.delete_db()
 		await resetEntity();
 	});
 	
@@ -33,8 +33,8 @@ describe('@Entity', () => {
 		
 		const
 			person      = await atomic(() => new Person()),
-			collections = await Entity.db_connector.list_collections(),
-			collection  = Entity.db_connector.db.collection(Person.collection_name),
+			collections = await Entity.db.list_collections(),
+			collection  = Entity.db.db.collection(Person.collection_name),
 			instances   = await collection.find({}).toArray();
 		
 		expect(Person.instances[0] === person).toBeTruthy();
@@ -62,7 +62,7 @@ describe('@Entity', () => {
 				name: 'person',
 				age : 30
 			})),
-			collection = Entity.db_connector.db.collection(Person.collection_name);
+			collection = Entity.db.db.collection(Person.collection_name);
 		
 		await person.delete()
 		const instances = await collection.find({}).toArray();
@@ -96,7 +96,7 @@ describe('@Entity', () => {
 			name       = 'person',
 			person     = await atomic(() => new Person({name})),
 			_id        = person._id,
-			collection = Entity.db_connector.db.collection(Person.collection_name);
+			collection = Entity.db.db.collection(Person.collection_name);
 		
 		await Entity.reset()
 		expect(Person.instances.length).toEqual(0)

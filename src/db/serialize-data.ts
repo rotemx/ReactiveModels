@@ -1,6 +1,6 @@
 //region imports
 import {Model} from "../model/model";
-import {FIELDS} from "../model/helpers/model-helpers";
+import {FIELDS} from "../model/helpers/model-symbols";
 //endregion
 
 const EXCLUDED_PROPS = ['db', 'auto_update_DB', 'collection_name', 'fields_config', '_is_loading'];

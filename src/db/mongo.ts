@@ -1,10 +1,11 @@
 //region imports
-import {Db, MongoClient} from 'mongodb';
-import {IDbConnector}    from "./i-db-connector";
-import {IDbConfig}       from "./i-db-config";
-import {Model}           from "..";
-import {json}            from "../utils/jsonify";
-import {IDableObject}    from "./i-idable";
+import {Cursor, Db, MongoClient} from 'mongodb';
+import {IDbConnector}            from "./i-db-connector";
+import {IDbConfig}               from "./i-db-config";
+import {Model}                   from "..";
+import {json}                    from "../utils/jsonify";
+import {IDableObject}            from "./i-idable";
+import {Queue}                   from './queue';
 //endregion
 
 const DEFAULT_CONFIG = {
@@ -44,20 +45,20 @@ export class Mongo implements IDbConnector {
 		if (!data || !Array.isArray(data) || !data.length) return Promise.reject('Mongo/update: no item provided.');
 		console.log(`> Bulk Writing \t\t ${collection_name} \t\t \t ${json(data)} \t\t`);
 		
-		return this
+		return Queue.enqueue(this
 			.db
 			.collection(collection_name)
-			.bulkWrite(data.map(d => (
-				{
-					updateOne: {
-						filter: {_id: d._id},
-						$set  : d
-					},
-					upsert   : true
-				})))
-			.catch(err => {
-				console.error('mongo bulkWrite err', err);
-			})
+			.bulkWrite, [(data.map(d => (
+			{
+				updateOne: {
+					filter: {_id: d._id},
+					$set  : d
+				},
+				upsert   : true
+			})))
+		]).catch(err => {
+			console.error('mongo bulkWrite err', err);
+		})
 	}
 	
 	upsert<T extends Model<T>>(query: IDableObject, data: object | object[], collection_name: string): Promise<any> {
@@ -67,33 +68,44 @@ export class Mongo implements IDbConnector {
 		}
 		console.log(`> Upserting \t\t ${collection_name} \t\t ${query._id} \t \t ${json(data)} \t\t`);
 		
-		return this
-			.db
-			.collection(collection_name)
-			.updateOne(query, {$set: data}, {upsert: true})
-			.catch(err => {
-				console.error('upsert err', err);
-			})
+		try {
+			let collection = this
+				.db
+				.collection(collection_name);
+			
+			return Queue.enqueue(collection
+				.updateOne.bind(collection), [query, {$set: data}, {upsert: true}]
+			            )
+			            .then((res: any) => {
+				            console.log('res', data, res.result);
+			            })
+		} catch (e) {
+			return Promise.reject(e)
+		}
 	}
 	
 	async unset(id: string, collection_name, key) {
 		if (!id || !collection_name) return Promise.reject('Mongo/update: no id or collection name provided.');
 		console.log(`> Unsetting \t\t ${collection_name} \t\t ${id} \t \t key: ${key} \t\t`);
-		return this
-			.db
-			.collection(collection_name)
-			.updateOne({_id: id}, {$unset: {[key]: 1}})
-			.catch(err => {
-				console.error('unset err', err);
-			})
+		try {
+			return Queue.enqueue(this
+				.db
+				.collection(collection_name)
+				.updateOne, [{_id: id}, {$unset: {[key]: 1}}]
+			)
+		} catch (e) {
+			return Promise.reject(e)
+		}
 	}
 	
 	delete<T extends Model>(item: Model, collection_name: string): Promise<any> {
 		if (!item) return Promise.reject('Mongo/delete: no item provided.');
-		return this
+		const collection = this
 			.db
-			.collection(collection_name)
-			.deleteOne({_id: item._id});
+			.collection(collection_name);
+		
+		return Queue.enqueue(collection
+			.deleteOne.bind(collection), [{_id: item._id}]);
 	}
 	
 	async close() {
@@ -113,8 +125,8 @@ export class Mongo implements IDbConnector {
 			.toArray()) || [];
 	}
 	
-	async delete_db(): Promise<any> {
-		return this.db.dropDatabase()
+	delete_db(): Promise<any> {
+		return Queue.enqueue(this.db.dropDatabase.bind(this.db))
 	}
 	
 	async list_collections(): Promise<string[]> {

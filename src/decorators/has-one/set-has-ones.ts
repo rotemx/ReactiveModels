@@ -1,5 +1,5 @@
 //region imports
-import {FIELDS, REACTIVE} from "../../model/helpers/model-helpers";
+import {FIELDS, REACTIVE} from "../../model/helpers/model-symbols";
 import {Class} from "../../model/types/class";
 import {IFieldMap} from "../../model/types/i-field-map";
 import {Model} from "../../model/model";

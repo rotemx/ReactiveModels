@@ -13,10 +13,10 @@ export const hasMany = (
 		Type  = Reflect.getMetadata("design:type", base, key);
 
 	if (Type !== Array) {
-		throw new Error(`A hasMany type must be an array of Models. Actual type is ${Type.name}`)
+		throw new Error(`A @hasMany type must be an array of Models. Actual type is ${Type.name}`)
 	}
 
-	console.log(`Setting HasMany key ${key} with type ${Type.name}`);
+	console.log(`Setting @HasMany key ${key} with type ${Type.name}`);
 	Class.hasManys = Class.hasManys || {};
 	Class.hasManys[key] = {collection_name:null}
 	

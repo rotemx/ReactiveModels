@@ -2,14 +2,16 @@
 import {isPrimitive}                                      from "../../utils/is-primitive";
 import {IFieldConfig}                                     from "./i-field-config";
 import {Class}                                            from "../../model/types/class";
-import {FIELDS}                                           from "../../model/helpers/model-helpers";
+import {FIELDS}                                           from "../../model/helpers/model-symbols";
 import {IFieldInstance, IFieldMap}                        from "../../model/types/i-field-map";
 import {Model}                                            from "../..";
 import {ArrayMethod, INSTANCES, MUTATING_ARRAY_FUNCTIONS} from "../has-many/helpers";
-import {cloneDeep, isEqual}                               from 'lodash'
 
-const BUILT_INS = ['prototype', 'length', 'constructor', '@@__IMMUTABLE_ITERABLE__@@', 'toJSON', 'toBSON', '_bsontype',
-                   Symbol.toStringTag]
+const
+	BUILT_INs = ['prototype', 'length', 'constructor', '@@__IMMUTABLE_ITERABLE__@@', 'toJSON', 'toBSON', '_bsontype',
+	             Symbol.toStringTag],
+	cloneDeep = require('lodash/cloneDeep'),
+	isEqual   = require('lodash/isEqual');
 
 //endregion
 
@@ -22,7 +24,7 @@ function setField(Class: Class, {key}: IFieldConfig) {
 		return new Proxy(target, {
 			get           : (target, property) => {     //Proxy
 				const value = target[property];
-				if (isPrimitive(value) || BUILT_INS.includes(<string>property)) {
+				if (isPrimitive(value) || BUILT_INs.includes(<string>property)) {
 					return value;
 				}
 				

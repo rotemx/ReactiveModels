@@ -1,7 +1,7 @@
 //region imports
 import {Model} from "../model";
 import {IFieldMap} from "../types/i-field-map";
-import {FIELDS} from "./model-helpers";
+import {FIELDS} from "./model-symbols";
 //endregion
 
 type InternalKey = keyof IFieldMap;

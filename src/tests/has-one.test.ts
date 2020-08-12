@@ -41,7 +41,7 @@ describe('@hasOne', () => {
 		})
 		
 		beforeEach(async () => {
-			await Entity.clearDb()
+			await Entity.db.delete_db()
 			await resetEntity();
 		});
 		
@@ -76,8 +76,8 @@ describe('@hasOne', () => {
 					cat,
 					name
 				}),
-				persons_collection = Entity.db_connector.db.collection(Person.collection_name),
-				cats_collection    = Entity.db_connector.db.collection(Cat.collection_name),
+				persons_collection = Entity.db.db.collection(Person.collection_name),
+				cats_collection    = Entity.db.db.collection(Cat.collection_name),
 				person_data        = await persons_collection.find({}).toArray(),
 				cats_data          = await cats_collection.find({}).toArray();
 			
@@ -242,7 +242,6 @@ describe('@hasOne', () => {
 			
 			expect(person2.cat).toBeNull()
 			expect(cat2.getParentModels()).toEqual([])
-			
 		})
 		
 	}

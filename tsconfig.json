@@ -76,7 +76,8 @@
     "skipLibCheck": true,
     "typeRoots": [
       "node_modules/@types"
-    ]
+    ],
+    "allowSyntheticDefaultImports": true
   },
   "exclude": [
     "node_modules",

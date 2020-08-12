@@ -1,5 +1,5 @@
 //region imports
-import {FIELDS, PARENTS} from "./model-helpers";
+import {FIELDS, PARENTS} from "./model-symbols";
 import {IFieldInstance}  from "../types/i-field-map";
 import {isPrimitive}     from "../../utils/is-primitive";
 import {Model}           from "../model";

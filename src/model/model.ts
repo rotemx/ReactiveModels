@@ -8,12 +8,12 @@ import {serializeData}                         from "../db/serialize-data";
 import * as shortid                            from 'shortid';
 import {Entity}                                from "..";
 import {IFieldMap}                             from "./types/i-field-map";
-import {FIELDS, IS_LOADING, PARENTS, REACTIVE} from "./helpers/model-helpers";
+import {FIELDS, IS_LOADING, PARENTS, REACTIVE} from "./helpers/model-symbols";
 import {IParentConfig}                         from "./types/i-parent-config";
-import {isEqual}                               from "lodash";
 import {decycle}                               from "json-cyclic"
 import {atomify}                               from "./helpers/atomify";
 import {mountConstructorData}                  from "./helpers/mount-constructor-data";
+const isEqual   = require('lodash/isEqual');
 
 //endregion
 
@@ -45,7 +45,7 @@ export class Model<T extends Model<T> = any> {
 	
 	constructor(data?: Partial<T>) {
 		this.Class = <Class>(this.constructor);
-		if (!Entity.db_connector) {
+		if (!Entity.db) {
 			throw new Error('Entity db_connector not initialized. Did you forget to run "await Entity.init()" ?')
 		}
 		
@@ -55,7 +55,7 @@ export class Model<T extends Model<T> = any> {
 		
 		if (!(this._id || (data && data._id))) {
 			// const now = moment().utc().format('DD-MM-YY--HH:mm');
-			this._id = `${this.Class.name}-${this['name'] || (data && data['name']) || ''}-${shortid.generate()}`;
+			this._id = `${this.Class.name}-${data && data['name'] || this['name'] || (data && data['name']) || ''}-${shortid.generate()}`;
 		}
 		
 		mountConstructorData.call(this, data)
@@ -77,7 +77,7 @@ export class Model<T extends Model<T> = any> {
 		return Object.keys(this[FIELDS])
 			.reduce((pre, key) => {
 				if (this[FIELDS][key].hasOne) {
-					pre[key] = this[key].data;
+					pre[key] = this[key] && this[key].data;
 				}
 				else if (this[FIELDS][key].hasMany) {
 					pre[key] = this[key].map(m => m.data);
@@ -101,14 +101,14 @@ export class Model<T extends Model<T> = any> {
 		const results = <Model[]>this.instances.filter(inst => _ids.includes(inst._id));
 		
 		if (results.length !== _ids.length) {
-			console.warn(`Cannot find some or all models with id included in ${json(_ids)} of class ${this.name}`);
+			console.warn(`@Entity.get(): Cannot find some or all models with id included in ${json(_ids)} of class ${this.name}`);
 		}
 		return results.length ? results[0] : null
 	}
 	
 	static async load<T extends Model>(): Promise<Model[]> {
 		const
-			prom    = atomify(Entity.db_connector.list(this.collection_name)),
+			prom    = atomify(Entity.db.list(this.collection_name)),
 			results = await prom;
 		
 		await prom.catch(err => {
@@ -134,7 +134,7 @@ export class Model<T extends Model<T> = any> {
 	}
 	
 	async unset(key: string) {
-		return atomify(Entity.db_connector.unset(this._id, this.Class.collection_name, key))
+		return atomify(Entity.db.unset(this._id, this.Class.collection_name, key))
 	}
 	
 	save = (): Promise<any> => {
@@ -164,7 +164,7 @@ export class Model<T extends Model<T> = any> {
 				}
 			}
 			const serialized_data = serializeData.call(this, {...data_or_key});
-			return atomify(Entity.db_connector.upsert({_id: this._id}, serialized_data, this.Class.collection_name))
+			return atomify(Entity.db.upsert({_id: this._id}, serialized_data, this.Class.collection_name))
 		}
 	};
 	
@@ -221,8 +221,8 @@ export class Model<T extends Model<T> = any> {
 	}
 	
 	delete = (): Promise<void> => {
-		return atomify(Entity.db_connector.delete({_id: this._id}, this.Class.collection_name)
-			.then(async () => {
+		return atomify(Entity.db.delete({_id: this._id}, this.Class.collection_name)
+		                     .then(async () => {
 				const parent_models = await this.getParentModels();
 				for (const p of this[PARENTS]) {
 					
